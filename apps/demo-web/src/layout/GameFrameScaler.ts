@@ -1,4 +1,4 @@
-import { DEFAULT_SCALE_LIMIT, FRAME_HEIGHT, FRAME_WIDTH, DEV_HARNESS_MIN_HEIGHT, MIN_FRAME_SCALE } from './layout-constants';
+import { DEFAULT_SCALE_LIMIT, FRAME_HEIGHT, FRAME_WIDTH, MIN_FRAME_SCALE } from './layout-constants';
 
 interface GameFrameScalerConfig {
   gameFrameElement: HTMLElement;
@@ -8,7 +8,7 @@ interface GameFrameScalerConfig {
 export function createGameFrameScaler(config: GameFrameScalerConfig): () => void {
   const apply = () => {
     const shellWidth = Math.max(config.shellElement.clientWidth, 1);
-    const shellHeight = Math.max(window.innerHeight - DEV_HARNESS_MIN_HEIGHT, 1);
+    const shellHeight = Math.max(window.innerHeight, 1);
     const widthScale = shellWidth / FRAME_WIDTH;
     const heightScale = shellHeight / FRAME_HEIGHT;
     const desiredScale = Math.min(widthScale, heightScale, DEFAULT_SCALE_LIMIT);
