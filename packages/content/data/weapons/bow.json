@@ -1,0 +1,8 @@
+{
+  "id": "bow_basic",
+  "name": "和弓",
+  "type": "bow",
+  "rangeBonus": 2,
+  "atkBonus": 0,
+  "cooldownMs": 1200
+}

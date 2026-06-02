@@ -1,0 +1,16 @@
+{
+  "name": "@samurai-rampage/content",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@samurai-rampage/contracts": "workspace:*"
+  },
+  "devDependencies": {}
+}

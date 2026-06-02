@@ -1,0 +1,8 @@
+{
+  "id": "spear_basic",
+  "name": "长枪",
+  "type": "spear",
+  "rangeBonus": 1,
+  "atkBonus": 1,
+  "cooldownMs": 1100
+}

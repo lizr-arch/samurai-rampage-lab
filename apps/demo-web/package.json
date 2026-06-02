@@ -1,0 +1,23 @@
+{
+  "name": "@samurai-rampage/demo-web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@samurai-rampage/battle-core": "workspace:*",
+    "@samurai-rampage/contracts": "workspace:*",
+    "@samurai-rampage/devtools": "workspace:*",
+    "@samurai-rampage/replay": "workspace:*",
+    "@samurai-rampage/scenarios": "workspace:*",
+    "pixi.js": "^8.0.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "typescript": "^5.0.0"
+  }
+}

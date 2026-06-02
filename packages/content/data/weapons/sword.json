@@ -1,0 +1,8 @@
+{
+  "id": "sword_basic",
+  "name": "打刀",
+  "type": "sword",
+  "rangeBonus": 0,
+  "atkBonus": 2,
+  "cooldownMs": 1000
+}

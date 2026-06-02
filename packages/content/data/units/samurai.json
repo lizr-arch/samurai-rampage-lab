@@ -1,0 +1,20 @@
+{
+  "id": "samurai",
+  "name": "侍",
+  "baseStats": {
+    "hp": 120,
+    "atk": 15,
+    "def": 6,
+    "range": 1,
+    "attackSpeed": 0.8,
+    "moveSpeed": 1
+  },
+  "allowedWeapons": [
+    "sword",
+    "spear",
+    "hammer"
+  ],
+  "tags": [
+    "elite"
+  ]
+}

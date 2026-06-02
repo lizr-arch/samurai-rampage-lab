@@ -1,0 +1,18 @@
+{
+  "id": "archer",
+  "name": "弓兵",
+  "baseStats": {
+    "hp": 60,
+    "atk": 9,
+    "def": 2,
+    "range": 3,
+    "attackSpeed": 0.9,
+    "moveSpeed": 1
+  },
+  "allowedWeapons": [
+    "bow"
+  ],
+  "tags": [
+    "backline"
+  ]
+}

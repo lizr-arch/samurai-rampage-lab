@@ -1,0 +1,17 @@
+{
+  "name": "@samurai-rampage/scenarios",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@samurai-rampage/contracts": "workspace:*",
+    "@samurai-rampage/content": "workspace:*"
+  },
+  "devDependencies": {}
+}

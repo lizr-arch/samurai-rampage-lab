@@ -1,0 +1,19 @@
+{
+  "id": "ashigaru",
+  "name": "足轻",
+  "baseStats": {
+    "hp": 90,
+    "atk": 10,
+    "def": 4,
+    "range": 1,
+    "attackSpeed": 1,
+    "moveSpeed": 1
+  },
+  "allowedWeapons": [
+    "sword",
+    "spear"
+  ],
+  "tags": [
+    "frontline"
+  ]
+}
