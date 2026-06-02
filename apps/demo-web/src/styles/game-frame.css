@@ -1,0 +1,472 @@
+.game-frame {
+  font-family: var(--font-ui);
+}
+
+.top-hud {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 12%;
+  margin: 18px 14px 10px;
+  padding: 8px 16px;
+  border: 3px solid #465e7d;
+  background:
+    linear-gradient(180deg, rgba(0, 19, 35, 0.92), rgba(4, 19, 34, 0.92)),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px 15px);
+  box-shadow: inset 0 0 16px rgba(255, 255, 255, 0.05);
+}
+
+.top-hud::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+.top-hud-faction {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 28%;
+  padding: 6px 10px;
+  border: 1px solid #2f4258;
+  background: rgba(15, 25, 35, 0.4);
+}
+
+.top-hud-faction--blue {
+  box-shadow: inset 0 0 22px rgba(80, 200, 255, 0.18);
+}
+
+.top-hud-faction--red {
+  box-shadow: inset 0 0 22px rgba(255, 110, 126, 0.18);
+}
+
+.top-hud-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.top-hud-commander {
+  margin: 0;
+  color: var(--text);
+  font-size: 24px;
+  letter-spacing: 1px;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7);
+}
+
+.top-hud-score {
+  margin: 0;
+  color: var(--gold);
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.top-hud-time {
+  min-width: 220px;
+  text-align: center;
+  font-size: 42px;
+  letter-spacing: 2px;
+  color: #fff7bf;
+  text-shadow: 0 2px 8px rgba(4, 14, 29, 0.7);
+}
+
+.top-hud-morale {
+  display: grid;
+  gap: 3px;
+}
+
+.top-hud-morale-text {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 18px;
+}
+
+.top-hud-morale-track {
+  width: 100%;
+  height: 12px;
+  border: 1px solid #3a4f63;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.top-hud-morale-fill {
+  height: 100%;
+  width: 60%;
+  background: linear-gradient(90deg, #4fd8ff, #2f95ff);
+}
+
+.top-hud-faction--red .top-hud-morale-fill {
+  background: linear-gradient(90deg, #ff6f7f, #ff9c8a);
+}
+
+.game-content {
+  margin-inline: 12px;
+  height: calc(72% - 12px);
+  display: grid;
+  grid-template-columns: 22% 56% 22%;
+  gap: 12px;
+}
+
+.army-panel {
+  position: relative;
+  border: 3px solid #445d78;
+  background:
+    linear-gradient(180deg, rgba(8, 21, 35, 0.88), rgba(3, 14, 24, 0.88));
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.army-panel::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1px dotted rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+}
+
+.army-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.army-portrait {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(10, 20, 38, 0.8));
+  border: 2px solid #4b5f7e;
+  font-size: 16px;
+  color: #deefff;
+}
+
+.army-panel--blue .army-portrait,
+.army-panel--blue .army-title {
+  color: #8de7ff;
+}
+
+.army-panel--red .army-portrait,
+.army-panel--red .army-title {
+  color: #ff97a6;
+}
+
+.army-commander {
+  font-size: 24px;
+  color: #d2f3ff;
+}
+
+.army-title {
+  margin: 0 0 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.army-list {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 2px;
+  overflow: auto;
+}
+
+.army-unit {
+  width: 100%;
+  border: 1px solid #3f5672;
+  text-align: left;
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  padding: 6px;
+  background: rgba(6, 16, 26, 0.85);
+  color: var(--text);
+}
+
+.army-unit:hover,
+.unit-marker:hover,
+.battle-control button:hover,
+.harness-block button:hover {
+  filter: brightness(1.12);
+}
+
+.army-unit.is-selected,
+.unit-marker.is-selected {
+  outline: 2px solid #ffe7a7;
+  box-shadow: 0 0 16px rgba(255, 215, 130, 0.55);
+}
+
+.army-unit-avatar {
+  width: 44px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid #667d96;
+}
+
+.army-unit-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.army-unit-name {
+  font-size: 16px;
+}
+
+.army-unit-count,
+.army-unit-tag {
+  color: var(--text-dim);
+}
+
+.army-unit-hp-wrap {
+  margin-top: 2px;
+  height: 8px;
+  background: rgba(4, 10, 18, 0.8);
+  border: 1px solid #33445a;
+}
+
+.army-unit-hp {
+  height: 100%;
+  width: 60%;
+  --hp-color: #48d0ff;
+  background: var(--hp-color);
+}
+
+.battlefield {
+  position: relative;
+  min-height: 100%;
+  border: 3px solid #3f5877;
+  background:
+    radial-gradient(circle at 70% 16%, rgba(255, 255, 255, 0.05), transparent 28%),
+    linear-gradient(180deg, rgba(42, 74, 40, 0.35), rgba(12, 38, 25, 0.18)),
+    repeating-radial-gradient(circle at 65% 55%, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 22px),
+    linear-gradient(135deg, rgba(17, 33, 26, 0.84), rgba(12, 22, 19, 0.9));
+  display: grid;
+  grid-template-columns: 38% 24% 38%;
+  gap: 8px;
+  padding: 10px 8px;
+}
+
+.battlefield-side {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+}
+
+.battlefield-side--red {
+  align-items: flex-end;
+}
+
+.unit-marker {
+  width: 95%;
+  border: 2px solid #495c73;
+  background: rgba(7, 16, 27, 0.75);
+  padding: 6px 8px;
+  color: var(--text);
+  display: grid;
+  grid-template-columns: 32px 1fr 1fr;
+  align-items: center;
+  gap: 6px;
+}
+
+.unit-marker--blue {
+  border-color: #4cb7dd;
+}
+
+.unit-marker--red {
+  border-color: #dd7186;
+}
+
+.unit-icon {
+  font-size: 18px;
+}
+
+.unit-rank {
+  justify-self: end;
+  color: #ffc86d;
+}
+
+.unit-label {
+  font-size: 16px;
+}
+
+.unit-role,
+.unit-dmg {
+  grid-column: 2 / span 2;
+}
+
+.unit-role {
+  color: #a6d7ff;
+}
+
+.unit-dmg {
+  color: #f4c47a;
+}
+
+.unit-hp-wrap {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  height: 6px;
+  border: 1px solid #2f4357;
+  background: rgba(2, 8, 19, 0.8);
+}
+
+.unit-hp {
+  height: 100%;
+  width: 40%;
+  --unit-hp-color: #67d2f0;
+  background: var(--unit-hp-color);
+}
+
+.unit-marker--red .unit-hp {
+  --unit-hp-color: #ff6f7f;
+}
+
+.battle-center {
+  position: relative;
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  padding: 8px;
+}
+
+.battle-center-title {
+  margin: 0;
+  font-size: 34px;
+  text-align: center;
+  color: #ffe9a4;
+  letter-spacing: 2px;
+}
+
+.battle-damage {
+  position: absolute;
+  top: 56%;
+  transform: translateY(-50%);
+  font-size: 24px;
+  color: #ffd5a4;
+  background: rgba(6, 12, 22, 0.8);
+  border: 1px solid #5a6d86;
+  padding: 4px 8px;
+}
+
+.battle-damage--blue {
+  left: 0;
+}
+
+.battle-damage--red {
+  right: 0;
+}
+
+.battle-tooltip {
+  margin: 0;
+  align-self: stretch;
+  padding: 10px 12px;
+  border: 1px solid #3b546f;
+  background: rgba(4, 12, 22, 0.8);
+  color: #d9e4f2;
+}
+
+.bottom-command {
+  margin: 10px 14px;
+  border: 3px solid #455f7c;
+  height: 14%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background:
+    linear-gradient(90deg, rgba(10, 20, 35, 0.9), rgba(7, 15, 26, 0.85));
+}
+
+.bottom-mini {
+  width: 220px;
+  flex-shrink: 0;
+}
+
+.minimap {
+  border: 2px solid #4f6887;
+  background: rgba(3, 11, 20, 0.75);
+  min-height: 98px;
+  padding: 6px;
+}
+
+.minimap p {
+  margin: 0 0 6px;
+  color: #c8d8ee;
+  letter-spacing: 1px;
+}
+
+.minimap-canvas {
+  position: relative;
+  width: 100%;
+  height: 64px;
+  border: 1px solid #3e526a;
+  background:
+    linear-gradient(90deg, rgba(56, 88, 55, 0.8), rgba(49, 70, 56, 0.85));
+}
+
+.mini-marker {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.9);
+}
+
+.mini-marker--blue {
+  background: var(--blue);
+}
+
+.mini-marker--red {
+  background: var(--red);
+}
+
+.battle-controls {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+
+.battle-action-row,
+.battle-tactic-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.battle-action-row button,
+.battle-tactic-row button,
+.harness-block button,
+.harness-speed-wrap button {
+  min-height: 36px;
+  border: 1px solid #60728e;
+  background: #101f2e;
+  color: #d7e4f6;
+  padding: 8px 12px;
+}
+
+.battle-action-row .battle-speed {
+  min-width: 90px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #5a6e85;
+  background: rgba(5, 18, 31, 0.8);
+  color: #ffe4a0;
+  padding: 0 10px;
+}

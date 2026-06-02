@@ -1,0 +1,32 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Trebuchet MS', 'Yu Gothic', 'Hiragino Sans GB', 'Noto Sans CJK SC', Arial, sans-serif;
+  background: #090c12;
+  color: #f4f1de;
+  overflow-x: hidden;
+}
+
+button,
+input,
+textarea,
+pre {
+  font: inherit;
+}
+
+a,
+button {
+  cursor: pointer;
+}
