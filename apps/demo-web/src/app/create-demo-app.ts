@@ -5,7 +5,10 @@ import { createDebugPanel } from '../ui/create-debug-panel';
 import { createPixiStage } from '../pixi/create-pixi-stage';
 import { renderBattleReport } from '../pixi/replay-renderer';
 
+const battleBackdropUrl = new URL('../../../../docs/references/pixel-battle-ui-reference.png', import.meta.url).href;
+
 export async function createDemoApp(root: HTMLElement): Promise<void> {
+  root.style.setProperty('--battle-backdrop-image', `url("${battleBackdropUrl}")`);
   root.innerHTML = '<div class="shell"><div class="stage-host"></div><div class="panel"></div></div>';
 
   const stageHost = root.querySelector<HTMLElement>('.stage-host');
