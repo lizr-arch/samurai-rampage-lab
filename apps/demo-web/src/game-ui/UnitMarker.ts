@@ -13,28 +13,50 @@ export interface UnitMarkerHandle {
   update(unit: MockUnit): void;
 }
 
+const SQUAD_DOTS = 8;
+
+function makeSquad(unit: MockUnit, side: BattleSide): HTMLElement {
+  const squad = document.createElement('div');
+  squad.className = `unit-squad unit-squad--${side}`;
+  const alive = Math.max(0, Math.round((unit.count / unit.maxCount) * SQUAD_DOTS));
+  for (let i = 0; i < SQUAD_DOTS; i += 1) {
+    const dot = document.createElement('span');
+    dot.className = 'unit-soldier';
+    if (i >= alive) {
+      dot.classList.add('unit-soldier--wounded');
+    }
+    squad.appendChild(dot);
+  }
+  return squad;
+}
+
 export function createUnitMarker(input: UnitMarkerInput): UnitMarkerHandle {
   const marker = document.createElement('button');
   marker.type = 'button';
-  marker.className = `unit-marker unit-marker--${input.side}`;
+  marker.className = `unit-marker unit-marker--${input.side} unit-marker--squad`;
   marker.dataset.unitId = input.unit.id;
   marker.dataset.side = input.side;
 
-  const icon = document.createElement('span');
-  icon.className = 'unit-icon';
-  icon.textContent = input.side === 'blue' ? '⚔' : '🛡';
+  const top = document.createElement('div');
+  top.className = 'unit-top';
+  const emblem = document.createElement('span');
+  emblem.className = 'unit-emblem';
+  emblem.textContent = input.side === 'blue' ? '◈' : '◉';
+  const name = document.createElement('span');
+  name.className = 'unit-name';
+  name.textContent = input.unit.name;
+  const level = document.createElement('span');
+  level.className = 'unit-level';
+  level.textContent = `Lv.${input.unit.level}`;
+  top.append(emblem, name, level);
 
-  const rank = document.createElement('span');
-  rank.className = 'unit-rank';
-  rank.textContent = String(input.unit.level);
-
-  const label = document.createElement('span');
-  label.className = 'unit-label';
-  label.textContent = `${input.unit.name}`;
-
-  const role = document.createElement('span');
+  const role = document.createElement('p');
   role.className = 'unit-role';
   role.textContent = input.unit.tag;
+
+  const count = document.createElement('span');
+  count.className = 'unit-count';
+  count.textContent = `${input.unit.count}/${input.unit.maxCount}`;
 
   const hpWrap = document.createElement('div');
   hpWrap.className = 'unit-hp-wrap';
@@ -43,12 +65,31 @@ export function createUnitMarker(input: UnitMarkerInput): UnitMarkerHandle {
   hp.style.width = `${Math.max(0, Math.min(100, (input.unit.hp / input.unit.maxHp) * 100))}%`;
   hpWrap.appendChild(hp);
 
+  const hpText = document.createElement('span');
+  hpText.className = 'unit-hp-text';
+  hpText.textContent = `${input.unit.hp}/${input.unit.maxHp}`;
+
+  const squad = makeSquad(input.unit, input.side);
   const dmg = document.createElement('span');
   dmg.className = 'unit-dmg';
   dmg.textContent = `-${Math.max(0, (input.unit.maxHp - input.unit.hp) * 3).toFixed(0)}`;
+
   if (input.selected) marker.classList.add('is-selected');
-  marker.append(icon, rank, label, role, hpWrap, dmg);
+  marker.append(top, role, count, hpWrap, hpText, squad, dmg);
   marker.addEventListener('click', () => input.onSelect(input.unit.id, input.side));
+
+  const syncSquad = (unit: MockUnit): void => {
+    squad.replaceChildren(
+      ...Array.from({ length: SQUAD_DOTS }).map((_, index) => {
+        const dot = document.createElement('span');
+        dot.className = 'unit-soldier';
+        if (index >= Math.round((unit.count / unit.maxCount) * SQUAD_DOTS)) {
+          dot.classList.add('unit-soldier--wounded');
+        }
+        return dot;
+      })
+    );
+  };
 
   return {
     root: marker,
@@ -56,12 +97,14 @@ export function createUnitMarker(input: UnitMarkerInput): UnitMarkerHandle {
       marker.classList.toggle('is-selected', selected);
     },
     update: (next) => {
-      label.textContent = `${next.name}`;
+      name.textContent = next.name;
       role.textContent = next.tag;
-      rank.textContent = String(next.level);
+      level.textContent = `Lv.${next.level}`;
+      count.textContent = `${next.count}/${next.maxCount}`;
       hp.style.width = `${Math.max(0, Math.min(100, (next.hp / next.maxHp) * 100))}%`;
+      hpText.textContent = `${next.hp}/${next.maxHp}`;
       dmg.textContent = `-${Math.max(0, (next.maxHp - next.hp) * 3).toFixed(0)}`;
+      syncSquad(next);
     }
   };
 }
-

@@ -1,78 +1,137 @@
 .game-frame {
   font-family: var(--font-ui);
+  image-rendering: pixelated;
 }
 
 .top-hud {
   position: relative;
   z-index: 3;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
   height: 12%;
-  margin: 18px 14px 10px;
-  padding: 8px 16px;
-  border: 3px solid #465e7d;
-  background:
-    linear-gradient(180deg, rgba(0, 19, 35, 0.92), rgba(4, 19, 34, 0.92)),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px 15px);
-  box-shadow: inset 0 0 16px rgba(255, 255, 255, 0.05);
+  margin: 14px;
+  padding: 8px;
+  border: 3px solid #5e768e;
+  background: linear-gradient(180deg, rgba(3, 17, 35, 0.96), rgba(7, 22, 39, 0.85));
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.7), 0 0 0 2px rgba(4, 7, 12, 0.8);
 }
 
-.top-hud::before {
+.top-hud::before,
+.top-hud::after {
   content: '';
   position: absolute;
   inset: 4px;
-  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
   pointer-events: none;
 }
 
+.top-hud::after {
+  inset: 8px;
+  border-style: solid;
+  border-width: 1px;
+  opacity: 0.25;
+}
+
 .top-hud-faction {
-  display: flex;
-  flex-direction: column;
+  flex: 1 1 0;
+  display: grid;
   gap: 6px;
-  min-width: 28%;
   padding: 6px 10px;
-  border: 1px solid #2f4258;
-  background: rgba(15, 25, 35, 0.4);
+  background: rgba(9, 20, 33, 0.85);
+  border: 1px solid #3f5670;
 }
 
 .top-hud-faction--blue {
-  box-shadow: inset 0 0 22px rgba(80, 200, 255, 0.18);
+  border-color: #4eb4d5;
+  box-shadow: inset 0 0 24px rgba(73, 197, 255, 0.2);
 }
 
 .top-hud-faction--red {
-  box-shadow: inset 0 0 22px rgba(255, 110, 126, 0.18);
+  border-color: #df7089;
+  box-shadow: inset 0 0 24px rgba(255, 120, 134, 0.18);
 }
 
-.top-hud-main {
+.top-hud-faction--blue,
+.top-hud-faction--red {
+  min-width: 0;
+}
+
+.top-hud-identity {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: center;
   gap: 8px;
+}
+
+.top-hud-badge {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid #adc6dd;
+  font-size: 16px;
 }
 
 .top-hud-commander {
   margin: 0;
-  color: var(--text);
-  font-size: 24px;
+  color: #f0f5ff;
+  font-size: 22px;
   letter-spacing: 1px;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .top-hud-score {
   margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
   color: var(--gold);
-  font-size: 26px;
+  letter-spacing: 1px;
+}
+
+.top-hud-score-label {
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.top-hud-score-value {
+  font-size: 29px;
+  color: #ffeec8;
   font-weight: 700;
 }
 
 .top-hud-time {
-  min-width: 220px;
-  text-align: center;
-  font-size: 42px;
-  letter-spacing: 2px;
-  color: #fff7bf;
-  text-shadow: 0 2px 8px rgba(4, 14, 29, 0.7);
+  position: relative;
+  min-width: 236px;
+  margin: 0 8px;
+  display: grid;
+  place-items: center;
+  font-size: 44px;
+  color: #ffe9a4;
+  letter-spacing: 3px;
+  text-shadow: 0 3px 6px rgba(2, 8, 16, 0.8);
+}
+
+.top-hud-time::before,
+.top-hud-time::after {
+  content: '';
+  position: absolute;
+  width: 48px;
+  height: 2px;
+  background: rgba(255, 232, 180, 0.45);
+}
+
+.top-hud-time::before {
+  top: 10px;
+  left: 0;
+}
+
+.top-hud-time::after {
+  bottom: 10px;
+  right: 0;
 }
 
 .top-hud-morale {
@@ -83,49 +142,53 @@
 .top-hud-morale-text {
   margin: 0;
   color: var(--text-dim);
-  font-size: 18px;
+  font-size: 15px;
 }
 
 .top-hud-morale-track {
-  width: 100%;
+  position: relative;
   height: 12px;
-  border: 1px solid #3a4f63;
-  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid #33495f;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.top-hud-morale-track::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.18), transparent);
+  pointer-events: none;
 }
 
 .top-hud-morale-fill {
+  --morale-color: #4ddcff;
   height: 100%;
-  width: 60%;
-  background: linear-gradient(90deg, #4fd8ff, #2f95ff);
-}
-
-.top-hud-faction--red .top-hud-morale-fill {
-  background: linear-gradient(90deg, #ff6f7f, #ff9c8a);
+  background: linear-gradient(90deg, var(--morale-color), rgba(255, 255, 255, 0.2));
 }
 
 .game-content {
   margin-inline: 12px;
   height: calc(72% - 12px);
   display: grid;
-  grid-template-columns: 22% 56% 22%;
-  gap: 12px;
+  grid-template-columns: 18% 64% 18%;
+  gap: 10px;
 }
 
 .army-panel {
   position: relative;
-  border: 3px solid #445d78;
-  background:
-    linear-gradient(180deg, rgba(8, 21, 35, 0.88), rgba(3, 14, 24, 0.88));
-  padding: 10px;
+  border: 2px solid #3d556d;
+  background: linear-gradient(180deg, rgba(9, 18, 28, 0.95), rgba(5, 12, 19, 0.9));
+  padding: 6px 8px 8px;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .army-panel::before {
   content: '';
   position: absolute;
   inset: 4px;
-  border: 1px dotted rgba(255, 255, 255, 0.12);
+  border: 1px dotted rgba(255, 255, 255, 0.08);
   pointer-events: none;
 }
 
@@ -134,42 +197,40 @@
   z-index: 1;
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #304455;
 }
 
 .army-portrait {
-  width: 64px;
-  height: 64px;
-  border-radius: 8px;
+  width: 46px;
+  height: 46px;
+  border: 2px solid #5f7894;
   display: grid;
   place-items: center;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(10, 20, 38, 0.8));
-  border: 2px solid #4b5f7e;
-  font-size: 16px;
-  color: #deefff;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.15), rgba(5, 10, 17, 0.9));
+  font-size: 20px;
 }
 
-.army-panel--blue .army-portrait,
-.army-panel--blue .army-title {
-  color: #8de7ff;
+.army-commander-wrap {
+  min-width: 0;
 }
 
-.army-panel--red .army-portrait,
-.army-panel--red .army-title {
-  color: #ff97a6;
+.army-side-title {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 14px;
 }
 
 .army-commander {
-  font-size: 24px;
-  color: #d2f3ff;
-}
-
-.army-title {
-  margin: 0 0 8px;
-  font-weight: 700;
-  letter-spacing: 1px;
+  margin-top: 2px;
+  color: #e3f2ff;
+  font-size: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .army-list {
@@ -177,70 +238,86 @@
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding-right: 2px;
+  gap: 5px;
   overflow: auto;
 }
 
 .army-unit {
   width: 100%;
   border: 1px solid #3f5672;
-  text-align: left;
-  display: flex;
-  align-items: stretch;
-  gap: 8px;
-  padding: 6px;
-  background: rgba(6, 16, 26, 0.85);
+  background: rgba(5, 13, 20, 0.85);
   color: var(--text);
-}
-
-.army-unit:hover,
-.unit-marker:hover,
-.battle-control button:hover,
-.harness-block button:hover {
-  filter: brightness(1.12);
-}
-
-.army-unit.is-selected,
-.unit-marker.is-selected {
-  outline: 2px solid #ffe7a7;
-  box-shadow: 0 0 16px rgba(255, 215, 130, 0.55);
+  padding: 5px 6px;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 5px;
+  align-items: center;
 }
 
 .army-unit-avatar {
-  width: 44px;
-  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
-  background: rgba(255, 255, 255, 0.09);
-  border: 1px solid #667d96;
+  border: 1px solid #556d87;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .army-unit-meta {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+}
+
+.army-unit-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
 }
 
 .army-unit-name {
-  font-size: 16px;
+  font-size: 14px;
+  line-height: 1.1;
 }
 
-.army-unit-count,
-.army-unit-tag {
-  color: var(--text-dim);
+.army-unit-level {
+  font-size: 11px;
+  color: #ffd7a0;
+}
+
+.army-unit-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #aebfda;
 }
 
 .army-unit-hp-wrap {
-  margin-top: 2px;
-  height: 8px;
+  margin-top: 1px;
+  height: 6px;
   background: rgba(4, 10, 18, 0.8);
   border: 1px solid #33445a;
 }
 
 .army-unit-hp {
+  --army-hp-color: #48d0ff;
   height: 100%;
   width: 60%;
-  --hp-color: #48d0ff;
-  background: var(--hp-color);
+  background: var(--army-hp-color);
 }
+
+.army-unit:hover,
+.unit-marker:hover,
+.pixel-btn:hover,
+.harness-block button:hover {
+  filter: brightness(1.15);
+}
+
+.army-unit.is-selected,
+.unit-marker.is-selected {
+  outline: 2px solid #ffe7a7;
+  box-shadow: 0 0 14px rgba(255, 215, 130, 0.55);
+}
+
