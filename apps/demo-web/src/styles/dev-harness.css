@@ -54,6 +54,25 @@
   color: #cfdbec;
 }
 
+.harness-preset-label,
+.harness-preset-description {
+  margin: 0 0 8px;
+  color: #cfdbec;
+}
+
+.harness-preset-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.harness-preset-description {
+  min-height: 20px;
+  color: #e7f1ff;
+  line-height: 1.4;
+}
+
 .raw-events,
 .test-result {
   margin: 0;

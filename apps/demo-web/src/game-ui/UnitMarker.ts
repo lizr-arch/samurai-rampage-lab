@@ -12,11 +12,6 @@ interface UnitMarkerHandle {
   root: HTMLElement;
 }
 
-function squadVariant(unit: MockUnit): 'melee' | 'ranged' {
-  const signature = `${unit.role} ${unit.tag}`;
-  return /远|弓|射|炮|枪/.test(signature) ? 'ranged' : 'melee';
-}
-
 export function createUnitMarker(input: UnitMarkerInput): UnitMarkerHandle {
   const marker = document.createElement('div');
   marker.className = `unit-marker unit-marker--${input.side}`;
@@ -37,7 +32,7 @@ export function createUnitMarker(input: UnitMarkerInput): UnitMarkerHandle {
     side: input.side,
     hpRatio: input.unit.hp / input.unit.maxHp,
     level: input.unit.level,
-    variant: squadVariant(input.unit),
+    archetype: input.unit.archetype
   });
   marker.appendChild(squad.root);
 

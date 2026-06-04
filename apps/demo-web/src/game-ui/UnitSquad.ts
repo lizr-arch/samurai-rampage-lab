@@ -1,10 +1,10 @@
-import { BattleSide } from '../mock/mock-armies';
+import { BattleSide, type UnitArchetype } from '../mock/mock-armies';
 
 interface UnitSquadInput {
   side: BattleSide;
   hpRatio: number;
   level: number;
-  variant: 'melee' | 'ranged';
+  archetype: UnitArchetype;
 }
 
 interface UnitSquadHandle {
@@ -20,7 +20,7 @@ function normalizeRatio(hpRatio: number): number {
 
 export function createUnitSquad(input: UnitSquadInput): UnitSquadHandle {
   const squad = document.createElement('div');
-  squad.className = `unit-squad unit-squad--${input.side} unit-squad--${input.variant}`;
+  squad.className = `unit-squad unit-squad--${input.side} unit-squad--${input.archetype}`;
 
   const flag = document.createElement('div');
   flag.className = 'unit-squad__flag';

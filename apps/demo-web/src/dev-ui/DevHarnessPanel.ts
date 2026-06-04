@@ -1,10 +1,13 @@
 import { BattleSpeed } from '../mock/mock-battle-events';
+import { DEFAULT_SCENARIO_PRESET, MOCK_SCENARIO_PRESETS, type ScenarioPresetKey } from '../mock/mock-scenario-presets';
 
 export interface DevHarnessActions {
   seed: string;
   speed: BattleSpeed;
+  selectedScenarioPreset: ScenarioPresetKey;
   onSeedChange: (seed: string) => void;
   onSpeedChange: (speed: BattleSpeed) => void;
+  onScenarioPresetChange: (preset: ScenarioPresetKey) => void;
   onRun1v1: () => void;
   onRun5v5: () => void;
   onResetBattle: () => void;
@@ -22,6 +25,7 @@ export interface DevHarnessHandle {
   setResult(text: string): void;
   setSpeedDisplay(speed: BattleSpeed): void;
   setSelectedSpeed(speed: BattleSpeed): void;
+  setSelectedScenarioPreset(preset: ScenarioPresetKey): void;
 }
 
 export function createDevHarnessPanel(
@@ -53,7 +57,23 @@ export function createDevHarnessPanel(
   random.type = 'button';
   random.textContent = 'Random Formation';
   random.addEventListener('click', actions.onRandomFormation);
-  scenario.append(scenarioTitle, run1, run5, reset, random);
+  const presetWrap = document.createElement('div');
+  presetWrap.className = 'harness-preset-wrap';
+  const presetLabel = document.createElement('p');
+  presetLabel.className = 'harness-preset-label';
+  presetLabel.textContent = '部署预设';
+  const presetButtons = (Object.keys(MOCK_SCENARIO_PRESETS) as ScenarioPresetKey[]).map((presetKey) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = MOCK_SCENARIO_PRESETS[presetKey].name;
+    button.dataset.preset = presetKey;
+    button.addEventListener('click', () => actions.onScenarioPresetChange(presetKey));
+    return button;
+  });
+  const presetDescription = document.createElement('p');
+  presetDescription.className = 'harness-preset-description';
+  scenario.append(scenarioTitle, presetLabel, presetWrap, presetDescription, run1, run5, reset, random);
+  presetWrap.append(...presetButtons);
 
   const params = document.createElement('div');
   params.className = 'harness-block';
@@ -129,7 +149,16 @@ export function createDevHarnessPanel(
     }
   }
 
+  function setSelectedScenarioPreset(preset: ScenarioPresetKey): void {
+    const selectedPreset = MOCK_SCENARIO_PRESETS[preset] ?? MOCK_SCENARIO_PRESETS[DEFAULT_SCENARIO_PRESET];
+    for (const button of presetButtons) {
+      button.classList.toggle('is-selected', button.dataset.preset === preset);
+    }
+    presetDescription.textContent = `${selectedPreset.name}: ${selectedPreset.description}`;
+  }
+
   setSelectedSpeed(actions.speed);
+  setSelectedScenarioPreset(actions.selectedScenarioPreset);
 
   return {
     root,
@@ -142,6 +171,7 @@ export function createDevHarnessPanel(
     setSpeedDisplay: (speed) => {
       speedLabel.textContent = `速度 ${speed}`;
     },
-    setSelectedSpeed
+    setSelectedSpeed,
+    setSelectedScenarioPreset
   };
 }

@@ -1,8 +1,12 @@
 import { BattleSpeed } from '../mock/mock-battle-events';
+import { type BattleSide, type MockUnit } from '../mock/mock-armies';
 import { createMiniMap } from './MiniMap';
 
 interface BottomCommandInput {
   speed: BattleSpeed;
+  blueUnits: MockUnit[];
+  redUnits: MockUnit[];
+  selectedUnitId: string | null;
   onPause: () => void;
   onPlay: () => void;
   onFastForward: () => void;
@@ -13,6 +17,8 @@ interface BottomCommandHandle {
   root: HTMLElement;
   setSpeed(speed: BattleSpeed): void;
   setFormationLabel(label: string): void;
+  setMiniMapUnits(units: { side: BattleSide; unit: MockUnit }[]): void;
+  setMiniMapSelection(selectedUnitId: string | null): void;
 }
 
 function createPixelButton(
@@ -41,10 +47,19 @@ function createPixelButton(
 export function createBottomCommandBar(input: BottomCommandInput): BottomCommandHandle {
   const root = document.createElement('footer');
   root.className = 'bottom-command';
+  let currentSelectedUnitId = input.selectedUnitId;
 
   const miniPanel = document.createElement('section');
   miniPanel.className = 'bottom-mini';
-  miniPanel.appendChild(createMiniMap().root);
+  let miniMapUnits = [
+    ...input.blueUnits.map((unit) => ({ side: 'blue' as const, unit })),
+    ...input.redUnits.map((unit) => ({ side: 'red' as const, unit }))
+  ];
+  const miniMap = createMiniMap({
+    units: miniMapUnits,
+    selectedUnitId: currentSelectedUnitId
+  });
+  miniPanel.appendChild(miniMap.root);
 
   const controls = document.createElement('div');
   controls.className = 'battle-controls';
@@ -88,5 +103,19 @@ export function createBottomCommandBar(input: BottomCommandInput): BottomCommand
     setFormationLabel: (label: string) => {
       formationLabel.textContent = label;
     },
+    setMiniMapUnits: (units) => {
+      miniMapUnits = units;
+      miniMap.update({
+        units,
+        selectedUnitId: currentSelectedUnitId
+      });
+    },
+    setMiniMapSelection: (selectedUnitId) => {
+      currentSelectedUnitId = selectedUnitId;
+      miniMap.update({
+        units: miniMapUnits,
+        selectedUnitId
+      });
+    }
   };
 }

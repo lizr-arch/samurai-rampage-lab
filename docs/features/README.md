@@ -16,12 +16,14 @@
 ### 1. 功能总表
 
 - [feature-summary-v0_1.md](./feature-summary-v0_1.md)
+- [feature-summary-v0_2.md](./feature-summary-v0_2.md)
 
 用途：
 
 1. 汇总 `demo-web` 当前已完成的 UI 和交互功能
 2. 作为阶段性功能基线
 3. 用于回顾“目前到底已经能做什么”
+4. `v0.2` 之后应优先查看最新版本总结
 
 ### 2. 战场交互专题
 
@@ -115,3 +117,19 @@
 1. 设计文档回答“为什么这样设计”
 2. 视觉合同回答“哪些表现允许，哪些禁止”
 3. 功能文档回答“现在已经能做什么”
+
+---
+
+## Repo Local Skill
+
+如果要继续维护 `demo-web` 功能文档、专题文档和 changelog，可直接使用仓库内 skill：
+
+1. `.codex/skills/demo-web-feature-docs/SKILL.md`
+2. 配套模板：`.codex/skills/demo-web-feature-docs/templates/feature-doc-update-template.md`
+
+它的用途是：
+
+1. 写 `demo-web` 功能点文档
+2. 更新 `docs/features/changelog.md`
+3. 维护 `feature summary / 专题文档 / changelog` 的一致性
+4. 复用这个项目自己的文档更新骨架，而不是每次重新描述格式

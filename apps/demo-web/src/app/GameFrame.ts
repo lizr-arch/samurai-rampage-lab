@@ -1,11 +1,12 @@
 import { BattleSpeed } from '../mock/mock-battle-events';
-import { BattleSide, MockArmySide } from '../mock/mock-armies';
+import { BattleSide, MockArmySide, MockUnit, type UnitArchetype } from '../mock/mock-armies';
 import { SquadPosition } from '../game-ui/drag-player-squad';
 import { SelectedUnitChipData } from '../game-ui/SelectedUnitChip';
 import { createTopHud } from '../game-ui/TopHud';
 import { createArmyPanel } from '../game-ui/ArmyPanel';
 import { createBattleField } from '../game-ui/BattleField';
 import { createBottomCommandBar } from '../game-ui/BottomCommandBar';
+import { createStagingTray } from '../game-ui/StagingTray';
 
 export interface GameFrameData {
   blue: MockArmySide;
@@ -27,9 +28,17 @@ export interface GameFrameHandle {
 
 interface GameFrameInput {
   data: GameFrameData;
+  maxUnitsPerSide: number;
   onUnitSelect: (unitId: string, side: BattleSide) => void;
   onUnitDragStart: (side: BattleSide, unitId: string, position: SquadPosition) => void;
-  onUnitDragEnd: (result: { side: BattleSide; unitId: string; position: SquadPosition; committed: boolean }) => void;
+  onUnitDragEnd: (result: {
+    side: BattleSide;
+    unitId: string;
+    position: SquadPosition;
+    committed: boolean;
+    removed: boolean;
+  }) => void;
+  onTrayDeploy: (result: { side: BattleSide; archetype: UnitArchetype; position: SquadPosition }) => void;
   onTacticalCommand: (name: string) => void;
   onPlaybackAction: (name: 'pause' | 'play' | 'fastforward') => void;
 }
@@ -42,6 +51,8 @@ export function createGameFrame(host: HTMLElement, input: GameFrameInput): GameF
   shell.className = 'game-frame-scale-shell';
   shell.appendChild(root);
   host.appendChild(shell);
+
+  let currentData = input.data;
 
   const hud = createTopHud(input.data);
 
@@ -57,10 +68,40 @@ export function createGameFrame(host: HTMLElement, input: GameFrameInput): GameF
     onUnitSelect: input.onUnitSelect
   });
 
+  const leftTray = createStagingTray({
+    side: 'blue',
+    fieldCount: input.data.blue.troops.length,
+    maxUnits: input.maxUnitsPerSide,
+    onDeployAttempt: ({ side, archetype, clientX, clientY }) => {
+      const position = battlefield.resolveTrayDeploy(side, archetype, clientX, clientY, currentData.blue.troops, currentData.red.troops);
+      if (!position) {
+        return;
+      }
+      input.onTrayDeploy({ side, archetype, position });
+    }
+  });
+
+  const rightTray = createStagingTray({
+    side: 'red',
+    fieldCount: input.data.red.troops.length,
+    maxUnits: input.maxUnitsPerSide,
+    onDeployAttempt: ({ side, archetype, clientX, clientY }) => {
+      const position = battlefield.resolveTrayDeploy(side, archetype, clientX, clientY, currentData.blue.troops, currentData.red.troops);
+      if (!position) {
+        return;
+      }
+      input.onTrayDeploy({ side, archetype, position });
+    }
+  });
+
   const battlefield = createBattleField({
     data: {
       blueUnits: input.data.blue.troops,
       redUnits: input.data.red.troops
+    },
+    deleteZones: {
+      blue: leftTray.root,
+      red: rightTray.root
     },
     onUnitSelect: input.onUnitSelect,
     onUnitDragStart: input.onUnitDragStart,
@@ -69,6 +110,9 @@ export function createGameFrame(host: HTMLElement, input: GameFrameInput): GameF
 
   const commandBar = createBottomCommandBar({
     speed: input.data.speed,
+    blueUnits: input.data.blue.troops,
+    redUnits: input.data.red.troops,
+    selectedUnitId: null,
     onPause: () => input.onPlaybackAction('pause'),
     onPlay: () => input.onPlaybackAction('play'),
     onFastForward: () => input.onPlaybackAction('fastforward'),
@@ -77,7 +121,13 @@ export function createGameFrame(host: HTMLElement, input: GameFrameInput): GameF
 
   const content = document.createElement('div');
   content.className = 'game-content';
-  content.append(leftPanel.root, battlefield.root, rightPanel.root);
+  const leftRail = document.createElement('div');
+  leftRail.className = 'battle-rail battle-rail--blue';
+  leftRail.append(leftPanel.root, leftTray.root);
+  const rightRail = document.createElement('div');
+  rightRail.className = 'battle-rail battle-rail--red';
+  rightRail.append(rightPanel.root, rightTray.root);
+  content.append(leftRail, battlefield.root, rightRail);
 
   root.append(hud.root, content, commandBar.root);
 
@@ -85,19 +135,27 @@ export function createGameFrame(host: HTMLElement, input: GameFrameInput): GameF
     root,
     shell,
     updateData: (next) => {
+      currentData = next;
       hud.update(next);
       leftPanel.update(next.blue);
       rightPanel.update(next.red);
+      leftTray.setFieldCount(next.blue.troops.length);
+      rightTray.setFieldCount(next.red.troops.length);
       battlefield.update({
         blueUnits: next.blue.troops,
         redUnits: next.red.troops
       });
       commandBar.setSpeed(next.speed);
+      commandBar.setMiniMapUnits([
+        ...next.blue.troops.map((unit) => ({ side: 'blue' as const, unit })),
+        ...next.red.troops.map((unit) => ({ side: 'red' as const, unit }))
+      ]);
     },
     setSelectedUnit: (selectedUnitId) => {
       leftPanel.highlight(selectedUnitId);
       rightPanel.highlight(selectedUnitId);
       battlefield.highlightUnit(selectedUnitId);
+      commandBar.setMiniMapSelection(selectedUnitId);
     },
     setSelectedUnitChip: (data) => {
       battlefield.setSelectedUnitChip(data);

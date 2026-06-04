@@ -1,5 +1,6 @@
 import { type MockUnit } from '../mock/mock-armies';
 import { type BattleSide } from '../mock/mock-armies';
+import { projectBattlefieldUnit, toSlotPosition } from './battlefield-projection';
 
 export interface SquadPosition {
   slotX: number;
@@ -8,13 +9,20 @@ export interface SquadPosition {
 
 export interface PlayerSquadDragCallbacks {
   onDragStart(side: BattleSide, unitId: string, position: SquadPosition): void;
-  onDragEnd(result: { side: BattleSide; unitId: string; position: SquadPosition; committed: boolean }): void;
+  onDragEnd(result: {
+    side: BattleSide;
+    unitId: string;
+    position: SquadPosition;
+    committed: boolean;
+    removed: boolean;
+  }): void;
 }
 
 interface PlayerSquadDragInput extends PlayerSquadDragCallbacks {
   side: BattleSide;
   marker: HTMLElement;
   battlefield: HTMLElement;
+  deleteZone?: HTMLElement | null;
   unit: MockUnit;
   otherSideUnits: MockUnit[];
   onSelect(unitId: string): void;
@@ -23,49 +31,22 @@ interface PlayerSquadDragInput extends PlayerSquadDragCallbacks {
 
 const MIN_DROP_DISTANCE_PX = 76;
 
-function clampUnitValue(value: number): number {
-  if (!Number.isFinite(value)) return 0.5;
-  return Math.max(0, Math.min(1, value));
-}
-
-function hashNoise(value: string): number {
-  return [...value].reduce((sum, c) => (sum * 31 + c.charCodeAt(0)) % 113, 7);
-}
-
 export function toBattleX(slotX: number, id: string): number {
-  const jitter = ((hashNoise(id) % 7) - 3) * 0.22;
-  return 16 + clampUnitValue(slotX) * 38 + jitter;
+  return projectBattlefieldUnit('blue', { id, slotX, slotY: 0.5 }).battleX;
 }
 
 export function toRedBattleX(slotX: number, id: string): number {
-  return 84 - clampUnitValue(slotX) * 38 - ((hashNoise(id) % 7) - 3) * 0.22;
+  return projectBattlefieldUnit('red', { id, slotX, slotY: 0.5 }).battleX;
 }
 
 export function toBattleY(slotY: number, id: string): number {
-  const jitter = ((hashNoise(id) % 9) - 4) * 0.15;
-  return 13 + clampUnitValue(slotY) * 72 + jitter;
-}
-
-function toSlotPosition(centerX: number, centerY: number, rect: DOMRect): SquadPosition {
-  const xPercent = (centerX / rect.width) * 100;
-  const yPercent = (centerY / rect.height) * 100;
-  return {
-    slotX: clampUnitValue((xPercent - 16) / 38),
-    slotY: clampUnitValue((yPercent - 13) / 72),
-  };
+  return projectBattlefieldUnit('blue', { id, slotX: 0.5, slotY }).battleY;
 }
 
 function toSideSlotPosition(side: BattleSide, centerX: number, centerY: number, rect: DOMRect): SquadPosition {
   const xPercent = (centerX / rect.width) * 100;
   const yPercent = (centerY / rect.height) * 100;
-  const slotX =
-    side === 'blue'
-      ? (xPercent - 16) / 38
-      : (84 - xPercent) / 38;
-  return {
-    slotX: clampUnitValue(slotX),
-    slotY: clampUnitValue((yPercent - 13) / 72),
-  };
+  return toSlotPosition(side, xPercent, yPercent);
 }
 
 function getLocalScale(element: HTMLElement, rect: DOMRect): { scaleX: number; scaleY: number } {
@@ -73,19 +54,17 @@ function getLocalScale(element: HTMLElement, rect: DOMRect): { scaleX: number; s
   const scaleY = rect.height > 0 ? rect.height / element.offsetHeight : 1;
   return {
     scaleX: scaleX > 0 ? scaleX : 1,
-    scaleY: scaleY > 0 ? scaleY : 1,
+    scaleY: scaleY > 0 ? scaleY : 1
   };
 }
 
-function isWithinSideHalf(side: BattleSide, centerX: number, centerY: number, rect: DOMRect): boolean {
+export function isWithinSideHalf(side: BattleSide, centerX: number, centerY: number, rect: DOMRect): boolean {
   const horizontalValid =
-    side === 'blue'
-      ? centerX >= 0 && centerX <= rect.width * 0.5
-      : centerX >= rect.width * 0.5 && centerX <= rect.width;
+    side === 'blue' ? centerX >= 0 && centerX <= rect.width * 0.5 : centerX >= rect.width * 0.5 && centerX <= rect.width;
   return horizontalValid && centerY >= 0 && centerY <= rect.height;
 }
 
-function isFarEnough(
+export function isFarEnough(
   side: BattleSide,
   unitId: string,
   nextPosition: SquadPosition,
@@ -104,8 +83,37 @@ function isFarEnough(
   });
 }
 
+export function resolveBattlefieldDrop(
+  side: BattleSide,
+  unitId: string,
+  clientX: number,
+  clientY: number,
+  battlefield: HTMLElement,
+  otherSideUnits: MockUnit[]
+): SquadPosition | null {
+  const rect = battlefield.getBoundingClientRect();
+  const centerX = clientX - rect.left;
+  const centerY = clientY - rect.top;
+  const localRect = new DOMRect(0, 0, battlefield.offsetWidth, battlefield.offsetHeight);
+  const next = toSideSlotPosition(side, centerX, centerY, localRect);
+  const valid = isWithinSideHalf(side, centerX, centerY, localRect) && isFarEnough(side, unitId, next, otherSideUnits, localRect);
+  return valid ? next : null;
+}
+
 export function attachPlayerSquadDrag(input: PlayerSquadDragInput): void {
   const { marker, battlefield, unit, side } = input;
+
+  marker.addEventListener('contextmenu', (event: MouseEvent) => {
+    event.preventDefault();
+    input.onSelect(unit.id);
+    input.onDragEnd({
+      side,
+      unitId: unit.id,
+      position: { slotX: unit.slotX, slotY: unit.slotY },
+      committed: false,
+      removed: true
+    });
+  });
 
   marker.addEventListener('mousedown', (event: MouseEvent) => {
     if (event.button !== 0) return;
@@ -114,7 +122,7 @@ export function attachPlayerSquadDrag(input: PlayerSquadDragInput): void {
     input.onSelect(unit.id);
     input.onDragStart(side, unit.id, {
       slotX: unit.slotX,
-      slotY: unit.slotY,
+      slotY: unit.slotY
     });
 
     const rect = battlefield.getBoundingClientRect();
@@ -125,14 +133,14 @@ export function attachPlayerSquadDrag(input: PlayerSquadDragInput): void {
     let released = false;
     marker.classList.add('is-dragging');
 
-    const finish = (committed: boolean, position: SquadPosition): void => {
+    const finish = (committed: boolean, position: SquadPosition, removed: boolean): void => {
       if (released) return;
       released = true;
       marker.classList.remove('is-dragging', 'is-drop-invalid');
       marker.style.left = '';
       marker.style.top = '';
       input.setDragZoneState('idle');
-      input.onDragEnd({ side, unitId: unit.id, position, committed });
+      input.onDragEnd({ side, unitId: unit.id, position, committed, removed });
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleEnd);
     };
@@ -156,6 +164,18 @@ export function attachPlayerSquadDrag(input: PlayerSquadDragInput): void {
     };
 
     const handleEnd = (endEvent: MouseEvent): void => {
+      const deleteRect = input.deleteZone?.getBoundingClientRect();
+      if (
+        deleteRect &&
+        endEvent.clientX >= deleteRect.left &&
+        endEvent.clientX <= deleteRect.right &&
+        endEvent.clientY >= deleteRect.top &&
+        endEvent.clientY <= deleteRect.bottom
+      ) {
+        finish(false, { slotX: unit.slotX, slotY: unit.slotY }, true);
+        return;
+      }
+
       const centerX = (endEvent.clientX - rect.left) / scale.scaleX - offsetX;
       const centerY = (endEvent.clientY - rect.top) / scale.scaleY - offsetY;
       const clampedCenterX = Math.max(0, Math.min(battlefield.offsetWidth, centerX));
@@ -166,7 +186,7 @@ export function attachPlayerSquadDrag(input: PlayerSquadDragInput): void {
         isWithinSideHalf(side, clampedCenterX, clampedCenterY, localRect) &&
         isFarEnough(side, unit.id, next, input.otherSideUnits, localRect);
 
-      finish(valid, valid ? next : { slotX: unit.slotX, slotY: unit.slotY });
+      finish(valid, valid ? next : { slotX: unit.slotX, slotY: unit.slotY }, false);
     };
 
     window.addEventListener('mousemove', handleMove);

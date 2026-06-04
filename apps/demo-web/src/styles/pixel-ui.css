@@ -45,6 +45,28 @@
     repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0 1px, rgba(255, 255, 255, 0) 1px 10px);
 }
 
+.battlefield-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  cursor: zoom-in;
+}
+
+.battlefield.is-zoomed .battlefield-viewport {
+  cursor: grab;
+}
+
+.battlefield.is-panning .battlefield-viewport {
+  cursor: grabbing;
+}
+
+.battlefield-canvas {
+  position: absolute;
+  inset: 0;
+  transform-origin: top left;
+  will-change: transform;
+}
+
 .battlefield::before,
 .battlefield::after {
   content: '';
@@ -83,7 +105,7 @@
   top: 0;
   bottom: 0;
   width: 50%;
-  z-index: 1;
+  z-index: 5;
   pointer-events: none;
   opacity: 0;
   background:
@@ -405,21 +427,19 @@
   image-rendering: pixelated;
 }
 
-.unit-squad--blue.unit-squad--melee .unit-squad__sprite {
-  background-image: url('/assets/units/squad_blue_melee_01.png');
-}
+.unit-squad--blue.unit-squad--infantry .unit-squad__sprite { background-image: url('/assets/units/squad_blue_infantry_01.png'); }
+.unit-squad--blue.unit-squad--spearman .unit-squad__sprite { background-image: url('/assets/units/squad_blue_spearman_01.png'); }
+.unit-squad--blue.unit-squad--archer .unit-squad__sprite { background-image: url('/assets/units/squad_blue_archer_01.png'); }
+.unit-squad--blue.unit-squad--gunner .unit-squad__sprite { background-image: url('/assets/units/squad_blue_gunner_01.png'); }
+.unit-squad--blue.unit-squad--cavalry .unit-squad__sprite { background-image: url('/assets/units/squad_blue_cavalry_01.png'); }
+.unit-squad--blue.unit-squad--ninja .unit-squad__sprite { background-image: url('/assets/units/squad_blue_ninja_01.png'); }
 
-.unit-squad--blue.unit-squad--ranged .unit-squad__sprite {
-  background-image: url('/assets/units/squad_blue_ranged_01.png');
-}
-
-.unit-squad--red.unit-squad--melee .unit-squad__sprite {
-  background-image: url('/assets/units/squad_red_melee_01.png');
-}
-
-.unit-squad--red.unit-squad--ranged .unit-squad__sprite {
-  background-image: url('/assets/units/squad_red_ranged_01.png');
-}
+.unit-squad--red.unit-squad--infantry .unit-squad__sprite { background-image: url('/assets/units/squad_red_infantry_01.png'); }
+.unit-squad--red.unit-squad--spearman .unit-squad__sprite { background-image: url('/assets/units/squad_red_spearman_01.png'); }
+.unit-squad--red.unit-squad--archer .unit-squad__sprite { background-image: url('/assets/units/squad_red_archer_01.png'); }
+.unit-squad--red.unit-squad--gunner .unit-squad__sprite { background-image: url('/assets/units/squad_red_gunner_01.png'); }
+.unit-squad--red.unit-squad--cavalry .unit-squad__sprite { background-image: url('/assets/units/squad_red_cavalry_01.png'); }
+.unit-squad--red.unit-squad--ninja .unit-squad__sprite { background-image: url('/assets/units/squad_red_ninja_01.png'); }
 
 @keyframes spark { 0%,100% { transform: rotate(45deg) scale(.75); opacity:.45 } 50% { transform: rotate(85deg) scale(1.12); opacity:1; } }
 @keyframes arc-swing { 0%,100% { transform: rotate(-8deg) translateY(0); } 50% { transform: rotate(-14deg) translateY(-3px); } }
