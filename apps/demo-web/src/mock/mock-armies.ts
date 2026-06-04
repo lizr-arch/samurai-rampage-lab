@@ -43,8 +43,8 @@ const baseUnits: Record<BattleSide, Omit<MockArmySide, 'score' | 'morale' | 'mor
         level: 2,
         role: '肉搏',
         tag: '前排',
-        slotX: 1,
-        slotY: 0
+        slotX: 0.58,
+        slotY: 0.25
       },
       {
         id: 'blue-archer',
@@ -56,8 +56,8 @@ const baseUnits: Record<BattleSide, Omit<MockArmySide, 'score' | 'morale' | 'mor
         level: 3,
         role: '远射',
         tag: '远程',
-        slotX: 1,
-        slotY: 1
+        slotX: 0.34,
+        slotY: 0.38
       },
       {
         id: 'blue-cavalry',
@@ -69,8 +69,8 @@ const baseUnits: Record<BattleSide, Omit<MockArmySide, 'score' | 'morale' | 'mor
         level: 3,
         role: '突袭',
         tag: '突击',
-        slotX: 1,
-        slotY: 2
+        slotX: 0.66,
+        slotY: 0.63
       },
       {
         id: 'blue-cannon',
@@ -82,8 +82,8 @@ const baseUnits: Record<BattleSide, Omit<MockArmySide, 'score' | 'morale' | 'mor
         level: 1,
         role: '远击',
         tag: '支援',
-        slotX: 1,
-        slotY: 3
+        slotX: 0.83,
+        slotY: 0.46
       },
       {
         id: 'blue-ninja',
@@ -95,8 +95,8 @@ const baseUnits: Record<BattleSide, Omit<MockArmySide, 'score' | 'morale' | 'mor
         level: 4,
         role: '奇袭',
         tag: '支援',
-        slotX: 2,
-        slotY: 4
+        slotX: 0.62,
+        slotY: 0.50
       }
     ]
   },
@@ -114,8 +114,8 @@ const baseUnits: Record<BattleSide, Omit<MockArmySide, 'score' | 'morale' | 'mor
         level: 2,
         role: '肉搏',
         tag: '前排',
-        slotX: 1,
-        slotY: 0
+        slotX: 0.58,
+        slotY: 0.68
       },
       {
         id: 'red-archer',
@@ -127,8 +127,8 @@ const baseUnits: Record<BattleSide, Omit<MockArmySide, 'score' | 'morale' | 'mor
         level: 2,
         role: '远射',
         tag: '远程',
-        slotX: 1,
-        slotY: 1
+        slotX: 0.34,
+        slotY: 0.85
       },
       {
         id: 'red-cavalry',
@@ -140,8 +140,8 @@ const baseUnits: Record<BattleSide, Omit<MockArmySide, 'score' | 'morale' | 'mor
         level: 4,
         role: '突袭',
         tag: '突击',
-        slotX: 1,
-        slotY: 2
+        slotX: 0.68,
+        slotY: 0.35
       },
       {
         id: 'red-cannon',
@@ -153,8 +153,8 @@ const baseUnits: Record<BattleSide, Omit<MockArmySide, 'score' | 'morale' | 'mor
         level: 3,
         role: '远击',
         tag: '支援',
-        slotX: 1,
-        slotY: 3
+        slotX: 0.83,
+        slotY: 0.78
       },
       {
         id: 'red-ninja',
@@ -166,8 +166,8 @@ const baseUnits: Record<BattleSide, Omit<MockArmySide, 'score' | 'morale' | 'mor
         level: 4,
         role: '奇袭',
         tag: '支援',
-        slotX: 2,
-        slotY: 4
+        slotX: 0.52,
+        slotY: 0.78
       }
     ]
   }

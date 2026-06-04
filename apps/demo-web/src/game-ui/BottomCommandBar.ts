@@ -12,6 +12,7 @@ interface BottomCommandInput {
 interface BottomCommandHandle {
   root: HTMLElement;
   setSpeed(speed: BattleSpeed): void;
+  setFormationLabel(label: string): void;
 }
 
 function createPixelButton(
@@ -60,6 +61,8 @@ export function createBottomCommandBar(input: BottomCommandInput): BottomCommand
 
   const row2 = document.createElement('div');
   row2.className = 'battle-tactic-row';
+  const formationLabel = document.createElement('span');
+  formationLabel.className = 'battle-formation-label';
   const tactics: Array<[string, string]> = [
     ['阵形', '◈'],
     ['鼓舞', '♫'],
@@ -71,6 +74,8 @@ export function createBottomCommandBar(input: BottomCommandInput): BottomCommand
   for (const [label, icon] of tactics) {
     row2.append(createPixelButton(label, icon, () => input.onTactic(label), 'pixel-btn--tactic'));
   }
+  formationLabel.textContent = '锋矢阵';
+  row2.appendChild(formationLabel);
 
   controls.append(row1, row2);
   root.append(miniPanel, controls);
@@ -79,6 +84,9 @@ export function createBottomCommandBar(input: BottomCommandInput): BottomCommand
     root,
     setSpeed: (nextSpeed: BattleSpeed) => {
       speed.textContent = nextSpeed;
-    }
+    },
+    setFormationLabel: (label: string) => {
+      formationLabel.textContent = label;
+    },
   };
 }

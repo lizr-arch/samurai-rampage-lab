@@ -1,5 +1,9 @@
 import { BattleSide, MockUnit } from '../mock/mock-armies';
+import { attachPlayerSquadDrag, toBattleX, toBattleY, toRedBattleX, type SquadPosition } from './drag-player-squad';
+import { createSelectedUnitChip, type SelectedUnitChipData } from './SelectedUnitChip';
 import { createUnitMarker } from './UnitMarker';
+
+const BATTLEFIELD_BACKGROUND = '/assets/backgrounds/battlefield_forest_01.png';
 
 interface BattleFieldData {
   blueUnits: MockUnit[];
@@ -9,125 +13,172 @@ interface BattleFieldData {
 interface BattleFieldInput {
   data: BattleFieldData;
   onUnitSelect: (unitId: string, side: BattleSide) => void;
+  onUnitDragStart: (side: BattleSide, unitId: string, position: SquadPosition) => void;
+  onUnitDragEnd: (result: { side: BattleSide; unitId: string; position: SquadPosition; committed: boolean }) => void;
 }
 
 interface BattleFieldHandle {
   root: HTMLElement;
   update(data: BattleFieldData): void;
-  highlightUnit(unitId: string | null): void;
+  highlightUnit(selectedUnitId: string | null): void;
+  setSelectedUnitChip(data: SelectedUnitChipData | null): void;
   setInfo(text: string): void;
+}
+
+function clamp(value: number): number {
+  if (!Number.isFinite(value)) return 0.5;
+  return Math.max(0, Math.min(1, value));
+}
+
+function isSkirmish(side: BattleSide, unit: MockUnit): boolean {
+  if (unit.role === '远击' || unit.tag === '支援') return false;
+  return clamp(unit.slotX) > 0.6;
 }
 
 function renderSide(
   side: BattleSide,
   units: MockUnit[],
   onUnitSelect: (unitId: string, side: BattleSide) => void,
-  container: HTMLElement
+  container: HTMLElement,
+  battlefield: HTMLElement,
+  dragZone: HTMLElement,
+  dragStart: (side: BattleSide, unitId: string, position: SquadPosition) => void,
+  dragEnd: (result: { side: BattleSide; unitId: string; position: SquadPosition; committed: boolean }) => void
 ): void {
   container.replaceChildren();
-  units.forEach((unit, index) => {
+  for (const unit of units) {
     const marker = createUnitMarker({
       side,
       unit,
       selected: false,
-      onSelect: onUnitSelect
+      onSelect: onUnitSelect,
     });
     marker.root.dataset.unitId = `${side}-${unit.id}`;
-    const advance = Math.min(160, 24 + index * 18);
-    marker.root.style.setProperty('--adv', side === 'blue' ? `${advance}px` : `-${advance}px`);
+    marker.root.dataset.unitRole = unit.role;
+    marker.root.style.setProperty(
+      '--battle-x',
+      `${side === 'blue' ? toBattleX(unit.slotX, unit.id) : toRedBattleX(unit.slotX, unit.id)}%`
+    );
+    marker.root.style.setProperty('--battle-y', `${toBattleY(unit.slotY, unit.id)}%`);
+    marker.root.classList.toggle('is-frontline', isSkirmish(side, unit));
+    attachPlayerSquadDrag({
+      side,
+      marker: marker.root,
+      battlefield,
+      unit,
+      otherSideUnits: units.filter((candidate) => candidate.id !== unit.id),
+      onSelect: (unitId) => onUnitSelect(unitId, side),
+      onDragStart: dragStart,
+      onDragEnd: dragEnd,
+      setDragZoneState: (state) => {
+        dragZone.dataset.state = state;
+        dragZone.dataset.side = side;
+        battlefield.classList.toggle('is-dragging-player', state !== 'idle');
+        battlefield.classList.toggle('is-drag-invalid', state === 'invalid');
+        battlefield.dataset.dragSide = state === 'idle' ? '' : side;
+      },
+    });
     container.appendChild(marker.root);
-  });
+  }
 }
 
-function createClashOverlay(): HTMLElement {
-  const overlay = document.createElement('div');
-  overlay.className = 'battlefield-glow';
+function createClashFx(): HTMLElement {
+  const root = document.createElement('div');
+  root.className = 'battlefield-combat-fx';
 
-  const arcLeft = document.createElement('div');
-  arcLeft.className = 'battle-line battle-line--slash battle-line--left';
-  const arcRight = document.createElement('div');
-  arcRight.className = 'battle-line battle-line--slash battle-line--right';
-  const arrow = document.createElement('div');
-  arrow.className = 'battle-line battle-line--arrow';
-  const line = document.createElement('div');
-  line.className = 'battle-midline';
-  const clash = document.createElement('div');
-  clash.className = 'battle-clash-ring';
+  const slashBlue = document.createElement('div');
+  slashBlue.className = 'battle-arc battle-arc--blue';
+  const slashRed = document.createElement('div');
+  slashRed.className = 'battle-arc battle-arc--red';
+  const arrowBlue = document.createElement('div');
+  arrowBlue.className = 'battle-arrow battle-arrow--blue';
+  const arrowRed = document.createElement('div');
+  arrowRed.className = 'battle-arrow battle-arrow--red';
+  const clashCore = document.createElement('div');
+  clashCore.className = 'battle-clash-core';
+  const sparks = document.createElement('div');
+  sparks.className = 'battle-sparks';
+  const s1 = document.createElement('span');
+  s1.className = 'battle-spark battle-spark--a';
+  const s2 = document.createElement('span');
+  s2.className = 'battle-spark battle-spark--b';
+  const s3 = document.createElement('span');
+  s3.className = 'battle-spark battle-spark--c';
+  const trail1 = document.createElement('div');
+  trail1.className = 'battle-trail battle-trail--left';
+  const trail2 = document.createElement('div');
+  trail2.className = 'battle-trail battle-trail--right';
+  const trail3 = document.createElement('div');
+  trail3.className = 'battle-trail battle-trail--center';
 
-  overlay.append(arcLeft, arcRight, arrow, line, clash);
-  return overlay;
+  const hitA = document.createElement('div');
+  hitA.className = 'battle-damage battle-damage--blue';
+  hitA.textContent = '-187';
+  const hitB = document.createElement('div');
+  hitB.className = 'battle-damage battle-damage--red';
+  hitB.textContent = '-255';
+  const hitC = document.createElement('div');
+  hitC.className = 'battle-damage battle-damage--mid';
+  hitC.textContent = '-96';
+  const title = document.createElement('h2');
+  title.className = 'battle-center-title';
+  title.textContent = '激突';
+
+  const clashRoad = document.createElement('div');
+  clashRoad.className = 'battle-road';
+  const cross1 = document.createElement('div');
+  cross1.className = 'battle-cross battle-cross--left';
+  const cross2 = document.createElement('div');
+  cross2.className = 'battle-cross battle-cross--right';
+
+  sparks.append(s1, s2, s3);
+  root.append(clashRoad, cross1, cross2, slashBlue, slashRed, arrowBlue, arrowRed, trail1, trail2, trail3, clashCore, sparks, hitA, hitB, hitC, title);
+  return root;
 }
 
 export function createBattleField(input: BattleFieldInput): BattleFieldHandle {
   const root = document.createElement('section');
   root.className = 'battlefield';
+  root.style.backgroundImage = `url(${JSON.stringify(BATTLEFIELD_BACKGROUND)})`;
+  root.style.backgroundRepeat = 'no-repeat';
+  root.style.backgroundPosition = 'center center';
+  root.style.backgroundSize = 'cover';
+  root.style.imageRendering = 'pixelated';
 
   const blueGroup = document.createElement('div');
   blueGroup.className = 'battlefield-side battlefield-side--blue';
   const redGroup = document.createElement('div');
   redGroup.className = 'battlefield-side battlefield-side--red';
+  const dragZone = document.createElement('div');
+  dragZone.className = 'battlefield-drag-zone';
+  dragZone.dataset.state = 'idle';
+  dragZone.dataset.side = 'blue';
+
   const center = document.createElement('section');
   center.className = 'battle-center';
+  center.append(createClashFx());
 
-  const clashTitle = document.createElement('h2');
-  clashTitle.className = 'battle-center-title';
-  clashTitle.textContent = '激  突';
+  const selectedUnitChip = createSelectedUnitChip();
 
-  const phase = document.createElement('p');
-  phase.className = 'battle-center-phase';
-  phase.textContent = '阵线压制 · 冲锋';
-
-  const damageWrap = document.createElement('div');
-  damageWrap.className = 'battle-damage-wrap';
-
-  const damageA = document.createElement('div');
-  damageA.className = 'battle-damage battle-damage--blue';
-  damageA.textContent = '-187';
-
-  const damageB = document.createElement('div');
-  damageB.className = 'battle-damage battle-damage--red';
-  damageB.textContent = '-255';
-
-  const tooltip = document.createElement('p');
-  tooltip.className = 'battle-tooltip';
-  tooltip.textContent = '点击部队可查看信息';
-
-  damageWrap.append(damageA, damageB);
-  center.append(createClashOverlay(), clashTitle, phase, damageWrap, tooltip);
-  root.append(blueGroup, center, redGroup);
-
-  renderSide('blue', input.data.blueUnits, input.onUnitSelect, blueGroup);
-  renderSide('red', input.data.redUnits, input.onUnitSelect, redGroup);
+  renderSide('blue', input.data.blueUnits, input.onUnitSelect, blueGroup, root, dragZone, input.onUnitDragStart, input.onUnitDragEnd);
+  renderSide('red', input.data.redUnits, input.onUnitSelect, redGroup, root, dragZone, input.onUnitDragStart, input.onUnitDragEnd);
+  root.append(dragZone, blueGroup, center, redGroup, selectedUnitChip.root);
 
   return {
     root,
-    setInfo: (text) => {
-      tooltip.textContent = text;
+    setSelectedUnitChip(data) {
+      selectedUnitChip.update(data);
     },
-    update: (next) => {
-      renderSide('blue', next.blueUnits, input.onUnitSelect, blueGroup);
-      renderSide('red', next.redUnits, input.onUnitSelect, redGroup);
+    setInfo(_text: string) {},
+    update(next) {
+      renderSide('blue', next.blueUnits, input.onUnitSelect, blueGroup, root, dragZone, input.onUnitDragStart, input.onUnitDragEnd);
+      renderSide('red', next.redUnits, input.onUnitSelect, redGroup, root, dragZone, input.onUnitDragStart, input.onUnitDragEnd);
     },
-    highlightUnit: (unitId) => {
+    highlightUnit(selectedUnitId) {
       const markers = root.querySelectorAll<HTMLElement>('.unit-marker');
       for (const marker of Array.from(markers)) {
-        marker.classList.toggle(
-          'is-selected',
-          marker.dataset.unitId === `blue-${unitId}` || marker.dataset.unitId === `red-${unitId}`
-        );
+        marker.classList.toggle('is-selected', marker.dataset.unitId === selectedUnitId);
       }
-      if (unitId) {
-        const selected = root.querySelector<HTMLElement>(
-          `[data-unit-id="blue-${unitId}"], [data-unit-id="red-${unitId}"]`
-        );
-        if (selected) {
-          const name = selected.querySelector<HTMLElement>('.unit-name')?.textContent ?? '未知部队';
-          const hp = selected.querySelector<HTMLElement>('.unit-hp-text')?.textContent ?? '';
-          tooltip.textContent = `选中单位: ${name} (${hp})`;
-        }
-      } else {
-        tooltip.textContent = '点击部队可查看信息';
-      }
-    }
+    },
   };
 }

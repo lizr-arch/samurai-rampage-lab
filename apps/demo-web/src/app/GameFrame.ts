@@ -1,5 +1,7 @@
 import { BattleSpeed } from '../mock/mock-battle-events';
 import { BattleSide, MockArmySide } from '../mock/mock-armies';
+import { SquadPosition } from '../game-ui/drag-player-squad';
+import { SelectedUnitChipData } from '../game-ui/SelectedUnitChip';
 import { createTopHud } from '../game-ui/TopHud';
 import { createArmyPanel } from '../game-ui/ArmyPanel';
 import { createBattleField } from '../game-ui/BattleField';
@@ -16,14 +18,18 @@ export interface GameFrameHandle {
   root: HTMLElement;
   shell: HTMLElement;
   updateData(data: GameFrameData): void;
-  setSelectedUnit(side: BattleSide | null, unitId: string | null): void;
+  setSelectedUnit(selectedUnitId: string | null): void;
+  setSelectedUnitChip(data: SelectedUnitChipData | null): void;
   showSelectionHint(text: string): void;
   setSpeed(speed: BattleSpeed): void;
+  setFormationLabel(label: string): void;
 }
 
 interface GameFrameInput {
   data: GameFrameData;
   onUnitSelect: (unitId: string, side: BattleSide) => void;
+  onUnitDragStart: (side: BattleSide, unitId: string, position: SquadPosition) => void;
+  onUnitDragEnd: (result: { side: BattleSide; unitId: string; position: SquadPosition; committed: boolean }) => void;
   onTacticalCommand: (name: string) => void;
   onPlaybackAction: (name: 'pause' | 'play' | 'fastforward') => void;
 }
@@ -56,7 +62,9 @@ export function createGameFrame(host: HTMLElement, input: GameFrameInput): GameF
       blueUnits: input.data.blue.troops,
       redUnits: input.data.red.troops
     },
-    onUnitSelect: input.onUnitSelect
+    onUnitSelect: input.onUnitSelect,
+    onUnitDragStart: input.onUnitDragStart,
+    onUnitDragEnd: input.onUnitDragEnd
   });
 
   const commandBar = createBottomCommandBar({
@@ -86,16 +94,22 @@ export function createGameFrame(host: HTMLElement, input: GameFrameInput): GameF
       });
       commandBar.setSpeed(next.speed);
     },
-    setSelectedUnit: (side, unitId) => {
-      leftPanel.highlight(side === 'blue' ? unitId : null);
-      rightPanel.highlight(side === 'red' ? unitId : null);
-      battlefield.highlightUnit(unitId);
+    setSelectedUnit: (selectedUnitId) => {
+      leftPanel.highlight(selectedUnitId);
+      rightPanel.highlight(selectedUnitId);
+      battlefield.highlightUnit(selectedUnitId);
+    },
+    setSelectedUnitChip: (data) => {
+      battlefield.setSelectedUnitChip(data);
     },
     showSelectionHint: (text) => {
       battlefield.setInfo(text);
     },
     setSpeed: (speed) => {
       commandBar.setSpeed(speed);
+    },
+    setFormationLabel: (label) => {
+      commandBar.setFormationLabel(label);
     }
   };
 }

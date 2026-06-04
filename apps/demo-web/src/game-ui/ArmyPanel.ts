@@ -9,7 +9,7 @@ interface ArmyPanelInput {
 interface ArmyPanelHandle {
   root: HTMLElement;
   update(data: MockArmySide): void;
-  highlight(unitId: string | null): void;
+  highlight(selectedUnitId: string | null): void;
 }
 
 function unitIcon(side: BattleSide): string {
@@ -26,6 +26,7 @@ function createUnitRow(
   row.className = 'army-unit';
   row.dataset.unitId = unit.id;
   row.dataset.side = side;
+  row.dataset.unitKey = `${side}-${unit.id}`;
 
   const avatar = document.createElement('span');
   avatar.className = 'army-unit-avatar';
@@ -116,7 +117,7 @@ export function createArmyPanel(input: ArmyPanelInput): ArmyPanelHandle {
     highlight: (selectedUnitId) => {
       const buttons = list.querySelectorAll<HTMLButtonElement>('.army-unit');
       for (const btn of Array.from(buttons)) {
-        btn.classList.toggle('is-selected', btn.dataset.unitId === selectedUnitId);
+        btn.classList.toggle('is-selected', btn.dataset.unitKey === selectedUnitId);
       }
     }
   };

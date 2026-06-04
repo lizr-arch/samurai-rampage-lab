@@ -1,6 +1,6 @@
 import { BattleSpeed } from '../mock/mock-battle-events';
 
-interface DevHarnessActions {
+export interface DevHarnessActions {
   seed: string;
   speed: BattleSpeed;
   onSeedChange: (seed: string) => void;
@@ -145,4 +145,3 @@ export function createDevHarnessPanel(
     setSelectedSpeed
   };
 }
-
