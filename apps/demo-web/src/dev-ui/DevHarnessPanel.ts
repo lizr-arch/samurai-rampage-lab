@@ -1,10 +1,12 @@
 import { BattleSpeed } from '../mock/mock-battle-events';
 import { DEFAULT_SCENARIO_PRESET, MOCK_SCENARIO_PRESETS, type ScenarioPresetKey } from '../mock/mock-scenario-presets';
+import { type DeploymentModeViewModel } from '../app/deployment-mode';
 
 export interface DevHarnessActions {
   seed: string;
   speed: BattleSpeed;
   selectedScenarioPreset: ScenarioPresetKey;
+  deploymentStatus: DeploymentModeViewModel;
   onSeedChange: (seed: string) => void;
   onSpeedChange: (speed: BattleSpeed) => void;
   onScenarioPresetChange: (preset: ScenarioPresetKey) => void;
@@ -26,6 +28,16 @@ export interface DevHarnessHandle {
   setSpeedDisplay(speed: BattleSpeed): void;
   setSelectedSpeed(speed: BattleSpeed): void;
   setSelectedScenarioPreset(preset: ScenarioPresetKey): void;
+  setDeploymentStatus(status: DeploymentModeViewModel): void;
+  setToolStatus(text: string): void;
+}
+
+function createButton(label: string, onClick: () => void): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = label;
+  button.addEventListener('click', onClick);
+  return button;
 }
 
 export function createDevHarnessPanel(
@@ -37,26 +49,26 @@ export function createDevHarnessPanel(
   const title = document.createElement('h2');
   title.textContent = 'DevHarness';
 
+  const deployment = document.createElement('div');
+  deployment.className = 'harness-block harness-deployment-status';
+  const deploymentTitle = document.createElement('h3');
+  deploymentTitle.textContent = '部署状态';
+  const mainStatus = document.createElement('p');
+  mainStatus.className = 'harness-status-line harness-status-line--primary';
+  const inputStatus = document.createElement('p');
+  inputStatus.className = 'harness-status-line';
+  const resultStatus = document.createElement('p');
+  resultStatus.className = 'harness-status-line';
+  deployment.append(deploymentTitle, mainStatus, inputStatus, resultStatus);
+
   const scenario = document.createElement('div');
   scenario.className = 'harness-block';
   const scenarioTitle = document.createElement('h3');
   scenarioTitle.textContent = 'Scenario 控制';
-  const run1 = document.createElement('button');
-  run1.type = 'button';
-  run1.textContent = 'Run 1v1';
-  run1.addEventListener('click', actions.onRun1v1);
-  const run5 = document.createElement('button');
-  run5.type = 'button';
-  run5.textContent = 'Run 5v5';
-  run5.addEventListener('click', actions.onRun5v5);
-  const reset = document.createElement('button');
-  reset.type = 'button';
-  reset.textContent = 'Reset Battle';
-  reset.addEventListener('click', actions.onResetBattle);
-  const random = document.createElement('button');
-  random.type = 'button';
-  random.textContent = 'Random Formation';
-  random.addEventListener('click', actions.onRandomFormation);
+  const run1 = createButton('Run 1v1', actions.onRun1v1);
+  const run5 = createButton('Run 5v5', actions.onRun5v5);
+  const reset = createButton('Reset Battle', actions.onResetBattle);
+  const random = createButton('Random Formation', actions.onRandomFormation);
   const presetWrap = document.createElement('div');
   presetWrap.className = 'harness-preset-wrap';
   const presetLabel = document.createElement('p');
@@ -104,24 +116,18 @@ export function createDevHarnessPanel(
   tools.className = 'harness-block';
   const toolsTitle = document.createElement('h3');
   toolsTitle.textContent = '数据工具';
-  const exportBtn = document.createElement('button');
-  exportBtn.type = 'button';
-  exportBtn.textContent = 'Export Replay';
-  exportBtn.addEventListener('click', actions.onExportReplay);
-  const importBtn = document.createElement('button');
-  importBtn.type = 'button';
-  importBtn.textContent = 'Import Replay';
-  importBtn.addEventListener('click', actions.onImportReplay);
-  const validateBtn = document.createElement('button');
-  validateBtn.type = 'button';
-  validateBtn.textContent = 'Validate Content';
-  validateBtn.addEventListener('click', actions.onValidateContent);
-  tools.append(toolsTitle, exportBtn, importBtn, validateBtn);
+  const exportBtn = createButton('Export Replay', actions.onExportReplay);
+  const importBtn = createButton('Import Replay', actions.onImportReplay);
+  const validateBtn = createButton('Validate Content', actions.onValidateContent);
+  const toolStatus = document.createElement('p');
+  toolStatus.className = 'harness-tool-status';
+  toolStatus.textContent = '工具状态：未执行';
+  tools.append(toolsTitle, exportBtn, importBtn, validateBtn, toolStatus);
 
   const status = document.createElement('div');
   status.className = 'harness-block';
   const statusTitle = document.createElement('h3');
-  statusTitle.textContent = 'Raw Events';
+  statusTitle.textContent = actions.deploymentStatus.rawEventsTitle;
   const raw = document.createElement('pre');
   raw.className = 'raw-events';
   raw.dataset.area = 'raw-events';
@@ -131,7 +137,7 @@ export function createDevHarnessPanel(
   const result = document.createElement('div');
   result.className = 'harness-block';
   const resultTitle = document.createElement('h3');
-  resultTitle.textContent = 'Test Result';
+  resultTitle.textContent = actions.deploymentStatus.testResultTitle;
   const resultArea = document.createElement('pre');
   resultArea.className = 'test-result';
   resultArea.dataset.area = 'test-result';
@@ -141,7 +147,7 @@ export function createDevHarnessPanel(
   const bottomInfo = document.createElement('p');
   bottomInfo.className = 'harness-meta';
   bottomInfo.textContent = '提示：当前仅为 mock 驱动，未接 battle-core。';
-  root.append(title, scenario, params, tools, status, result, bottomInfo);
+  root.append(title, deployment, scenario, params, tools, status, result, bottomInfo);
 
   function setSelectedSpeed(speed: BattleSpeed): void {
     for (const button of speedButtons) {
@@ -157,21 +163,34 @@ export function createDevHarnessPanel(
     presetDescription.textContent = `${selectedPreset.name}: ${selectedPreset.description}`;
   }
 
+  function setDeploymentStatus(status: DeploymentModeViewModel): void {
+    mainStatus.textContent = status.mainStatus;
+    inputStatus.textContent = status.inputStatus;
+    resultStatus.textContent = status.resultStatus;
+    statusTitle.textContent = status.rawEventsTitle;
+    resultTitle.textContent = status.testResultTitle;
+  }
+
   setSelectedSpeed(actions.speed);
   setSelectedScenarioPreset(actions.selectedScenarioPreset);
+  setDeploymentStatus(actions.deploymentStatus);
 
   return {
     root,
     setRawEvents: (text) => {
-      raw.textContent = `Raw Events:\n${text}`;
+      raw.textContent = text;
     },
     setResult: (text) => {
-      resultArea.textContent = `Test Result:\n${text}`;
+      resultArea.textContent = text;
     },
     setSpeedDisplay: (speed) => {
       speedLabel.textContent = `速度 ${speed}`;
     },
     setSelectedSpeed,
-    setSelectedScenarioPreset
+    setSelectedScenarioPreset,
+    setDeploymentStatus,
+    setToolStatus: (text) => {
+      toolStatus.textContent = text;
+    }
   };
 }

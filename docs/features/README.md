@@ -17,13 +17,14 @@
 
 - [feature-summary-v0_1.md](./feature-summary-v0_1.md)
 - [feature-summary-v0_2.md](./feature-summary-v0_2.md)
+- [feature-summary-v0_3.md](./feature-summary-v0_3.md)
 
 用途：
 
 1. 汇总 `demo-web` 当前已完成的 UI 和交互功能
 2. 作为阶段性功能基线
 3. 用于回顾“目前到底已经能做什么”
-4. `v0.2` 之后应优先查看最新版本总结
+4. `v0.3` 之后应优先查看最新版本总结
 
 ### 2. 战场交互专题
 

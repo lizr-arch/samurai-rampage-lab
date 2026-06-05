@@ -1,14 +1,13 @@
 import { MO } from '../layout/layout-constants';
 import { type SelectedUnitChipData } from '../game-ui/SelectedUnitChip';
-import { type SquadPosition } from '../game-ui/drag-player-squad';
 import {
   BattleSide,
+  UNIT_LIBRARY,
   UNIT_ARCHETYPE_ORDER,
   createBattleDataFromTroops,
   createMockUnit,
   type MockBattleData,
-  type MockUnit,
-  type UnitArchetype
+  type MockUnit
 } from '../mock/mock-armies';
 import { type MockScenarioKey } from '../mock/mock-battle-events';
 import {
@@ -21,15 +20,33 @@ import {
 import { createGameFrame, type GameFrameData, type GameFrameHandle } from './GameFrame';
 import { createDevHarness, type DevHarnessHandle } from './DevHarness';
 import { createGameFrameScaler } from '../layout/GameFrameScaler';
+import { canAddTroop } from './battle-prep';
+import {
+  completeRun,
+  createInitialDeploymentMode,
+  createToolStatusText,
+  deriveDeploymentModeView,
+  markDeploymentInputChanged,
+  markScenarioPresetApplied,
+  markSeedChanged,
+  resetDeploymentMode,
+  scaleTroopsForBattle,
+  type BattleScale,
+  type DeploymentModeState
+} from './deployment-mode';
+import {
+  applyFormation,
+  formatFormationDisplay,
+  formationLabel,
+  nextFormation,
+  shuffleTroopPositions,
+  type FormationMode,
+  type FormationPreset
+} from './formation-controls';
 
-type FormationPreset = 'arrow' | 'crane' | 'scale';
-type FormationMode = 'preset' | 'manual';
-type ScenarioRunKey = MockScenarioKey | 'idle';
-
-interface AppState {
+interface AppState extends DeploymentModeState {
   seed: string;
   speed: '0.5x' | '1x' | '2x' | '4x';
-  scenarioRunKey: ScenarioRunKey;
   selectedScenarioPreset: ScenarioPresetKey;
   selectedUnitId: string | null;
   selectedFormation: FormationPreset;
@@ -44,23 +61,8 @@ const sideLabel: Record<BattleSide, string> = {
   red: '红方'
 };
 
-const formationOrder: FormationPreset[] = ['arrow', 'crane', 'scale'];
-const formationLabel: Record<FormationPreset, string> = {
-  arrow: '锋矢阵',
-  crane: '鹤翼阵',
-  scale: '鱼鳞阵'
-};
-const formationModeLabel: Record<FormationMode, string> = {
-  preset: '预设阵型',
-  manual: '手动布阵'
-};
-
 function cloneUnits(units: MockUnit[]): MockUnit[] {
   return units.map((unit) => ({ ...unit }));
-}
-
-function formatFormationDisplay(formation: FormationPreset, mode: FormationMode): string {
-  return `${formationLabel[formation]} · ${formationModeLabel[mode]}`;
 }
 
 function parseSelectedKey(selectedUnitId: string | null): { side: BattleSide; unitId: string } | null {
@@ -114,30 +116,22 @@ function syncSelectionFeedback(state: AppState, gameFrame: GameFrameHandle): voi
   );
 }
 
-function nextFormation(current: FormationPreset): FormationPreset {
-  const currentIndex = formationOrder.indexOf(current);
-  return formationOrder[(currentIndex + 1) % formationOrder.length] ?? 'arrow';
-}
-
-function hashSeed(input: string): number {
-  return [...input].reduce((sum, char) => (sum * 33 + char.charCodeAt(0)) % 104729, 17);
-}
-
 function updateBattleData(
   state: AppState,
   blueTroops: MockUnit[],
   redTroops: MockUnit[],
-  scale: '1v1' | '5v5',
+  scale: BattleScale,
   battleTime: string
 ): void {
   state.battleFrameData = {
     ...createBattleDataFromTroops(blueTroops, redTroops, scale),
     battleTime,
-    speed: state.speed
+    speed: state.speed,
+    battleScale: scale
   };
 }
 
-function buildPresetTroops(side: BattleSide, presetKey: ScenarioPresetKey, scale: '1v1' | '5v5'): MockUnit[] {
+function buildPresetTroops(side: BattleSide, presetKey: ScenarioPresetKey, scale: BattleScale): MockUnit[] {
   const preset = MOCK_SCENARIO_PRESETS[presetKey];
   const positions = side === 'blue' ? preset.bluePositions : preset.redPositions;
   return UNIT_ARCHETYPE_ORDER.map((archetype) =>
@@ -147,7 +141,7 @@ function buildPresetTroops(side: BattleSide, presetKey: ScenarioPresetKey, scale
 
 function makePresetBattleData(
   presetKey: ScenarioPresetKey,
-  scale: '1v1' | '5v5',
+  scale: BattleScale,
   speed: AppState['speed'],
   battleTime: string
 ): GameFrameData {
@@ -158,54 +152,9 @@ function makePresetBattleData(
       scale
     ),
     battleTime,
-    speed
+    speed,
+    battleScale: scale
   };
-}
-
-function formationPositions(formation: FormationPreset, count: number): SquadPosition[] {
-  const positions: SquadPosition[] = [];
-  for (let index = 0; index < count; index += 1) {
-    if (formation === 'arrow') {
-      const row = Math.floor(index / 2);
-      const column = index % 2 === 0 ? -1 : 1;
-      positions.push({
-        slotX: Math.max(0.16, Math.min(0.86, 0.72 - row * 0.12 - (row === 0 && index === 0 ? -0.08 : 0))),
-        slotY: Math.max(0.14, Math.min(0.86, 0.5 + (index === 0 ? 0 : column * (0.1 + row * 0.06))))
-      });
-      continue;
-    }
-    if (formation === 'crane') {
-      const wing = index % 2 === 0 ? -1 : 1;
-      const row = Math.floor(index / 2);
-      positions.push({
-        slotX: Math.max(0.14, Math.min(0.84, 0.56 - row * 0.09)),
-        slotY: Math.max(0.12, Math.min(0.88, 0.5 + wing * (0.16 + row * 0.1)))
-      });
-      continue;
-    }
-    const row = Math.floor(index / 3);
-    const col = index % 3;
-    positions.push({
-      slotX: Math.max(0.16, Math.min(0.84, 0.34 + col * 0.18 + row * 0.04)),
-      slotY: Math.max(0.16, Math.min(0.84, 0.28 + row * 0.16 + (col % 2 === 0 ? 0 : 0.05)))
-    });
-  }
-  return positions;
-}
-
-function applyFormation(units: MockUnit[], formation: FormationPreset): MockUnit[] {
-  const slots = formationPositions(formation, units.length);
-  return units.map((unit, index) => ({
-    ...unit,
-    slotX: slots[index]?.slotX ?? unit.slotX,
-    slotY: slots[index]?.slotY ?? unit.slotY
-  }));
-}
-
-function shuffleTroopPositions(units: MockUnit[], seed: string): MockUnit[] {
-  const ordered = [...units].sort((left, right) => hashSeed(`${seed}|${left.id}`) - hashSeed(`${seed}|${right.id}`));
-  const positions = ordered.map((unit) => ({ slotX: unit.slotX, slotY: unit.slotY }));
-  return units.map((unit, index) => ({ ...unit, ...positions[index % positions.length] }));
 }
 
 export async function createApp(root: HTMLElement): Promise<void> {
@@ -219,14 +168,35 @@ export async function createApp(root: HTMLElement): Promise<void> {
   root.appendChild(appHost);
 
   const state: AppState = {
+    ...createInitialDeploymentMode(),
     seed: MO.defaultSeed,
     speed: MO.defaultSpeed,
-    scenarioRunKey: 'idle',
     selectedScenarioPreset: DEFAULT_SCENARIO_PRESET,
     selectedUnitId: null,
     selectedFormation: 'arrow',
     formationMode: 'preset',
     battleFrameData: makePresetBattleData(DEFAULT_SCENARIO_PRESET, '1v1', MO.defaultSpeed, MO.defaultBattleTime)
+  };
+
+  let harness: DevHarnessHandle | null = null;
+
+  const getDeploymentStatus = () =>
+    deriveDeploymentModeView(state, {
+      selectedPresetName: MOCK_SCENARIO_PRESETS[state.selectedScenarioPreset].name
+    });
+
+  const refreshDeploymentStatus = (): void => {
+    harness?.setDeploymentStatus(getDeploymentStatus());
+  };
+
+  const markBattleInputEdited = (): void => {
+    Object.assign(state, markDeploymentInputChanged(state));
+    refreshDeploymentStatus();
+  };
+
+  const markBattleInputRandomized = (): void => {
+    Object.assign(state, markDeploymentInputChanged(state, 'randomized'));
+    refreshDeploymentStatus();
   };
 
   const gameFrame = createGameFrame(frameHost, {
@@ -253,10 +223,11 @@ export async function createApp(root: HTMLElement): Promise<void> {
             : cloneUnits(state.battleFrameData.red.troops);
         state.selectedUnitId = null;
         state.formationMode = 'manual';
-        updateBattleData(state, nextBlue, nextRed, state.scenarioRunKey === 'run5v5' ? '5v5' : '1v1', state.battleFrameData.battleTime);
+        updateBattleData(state, nextBlue, nextRed, state.battleScale, state.battleFrameData.battleTime);
         gameFrame.updateData(state.battleFrameData);
         gameFrame.setFormationLabel(formatFormationDisplay(state.selectedFormation, state.formationMode));
         syncSelectionFeedback(state, gameFrame);
+        markBattleInputEdited();
         setSelectionHint(`${sideLabel[side]}单位已撤回托盘`, gameFrame);
         return;
       }
@@ -276,19 +247,25 @@ export async function createApp(root: HTMLElement): Promise<void> {
           : cloneUnits(state.battleFrameData.red.troops);
       state.selectedUnitId = `${side}-${unitId}`;
       state.formationMode = 'manual';
-      updateBattleData(state, nextBlue, nextRed, state.scenarioRunKey === 'run5v5' ? '5v5' : '1v1', state.battleFrameData.battleTime);
+      updateBattleData(state, nextBlue, nextRed, state.battleScale, state.battleFrameData.battleTime);
       gameFrame.updateData(state.battleFrameData);
       gameFrame.setFormationLabel(formatFormationDisplay(state.selectedFormation, state.formationMode));
       syncSelectionFeedback(state, gameFrame);
+      markBattleInputEdited();
       setSelectionHint(`${sideLabel[side]}布阵已更新`, gameFrame);
     },
     onTrayDeploy: ({ side, archetype, position }) => {
       const ownTroops = side === 'blue' ? state.battleFrameData.blue.troops : state.battleFrameData.red.troops;
-      if (ownTroops.length >= MAX_UNITS_PER_SIDE) {
-        setSelectionHint(`${sideLabel[side]}已达到 ${MAX_UNITS_PER_SIDE} 队上限`, gameFrame);
+      const deployAttempt = canAddTroop(ownTroops, archetype, state.battleScale, MAX_UNITS_PER_SIDE);
+      if (!deployAttempt.allowed) {
+        if (deployAttempt.reason === 'unit_cap') {
+          setSelectionHint(`${sideLabel[side]}已达到 ${MAX_UNITS_PER_SIDE} 队上限`, gameFrame);
+          return;
+        }
+        setSelectionHint(`${sideLabel[side]}军备不足，无法继续出阵 ${UNIT_LIBRARY[archetype].name}`, gameFrame);
         return;
       }
-      const scale = state.scenarioRunKey === 'run5v5' ? '5v5' : '1v1';
+      const scale = state.battleScale;
       const nextUnit = createMockUnit(side, archetype, scale, position);
       const nextBlue =
         side === 'blue' ? [...state.battleFrameData.blue.troops.map((unit) => ({ ...unit })), nextUnit] : cloneUnits(state.battleFrameData.blue.troops);
@@ -300,6 +277,7 @@ export async function createApp(root: HTMLElement): Promise<void> {
       gameFrame.updateData(state.battleFrameData);
       gameFrame.setFormationLabel(formatFormationDisplay(state.selectedFormation, state.formationMode));
       syncSelectionFeedback(state, gameFrame);
+      markBattleInputEdited();
       setSelectionHint(`${sideLabel[side]}新增 ${nextUnit.name}`, gameFrame);
     },
     onTacticalCommand: (name) => {
@@ -311,12 +289,13 @@ export async function createApp(root: HTMLElement): Promise<void> {
           state,
           nextBlue,
           state.battleFrameData.red.troops,
-          state.scenarioRunKey === 'run5v5' ? '5v5' : '1v1',
+          state.battleScale,
           state.battleFrameData.battleTime
         );
         gameFrame.updateData(state.battleFrameData);
         gameFrame.setFormationLabel(formatFormationDisplay(state.selectedFormation, state.formationMode));
         syncSelectionFeedback(state, gameFrame);
+        markBattleInputEdited();
         setSelectionHint(`蓝方阵型切换为 ${formationLabel[state.selectedFormation]}`, gameFrame);
         return;
       }
@@ -332,17 +311,17 @@ export async function createApp(root: HTMLElement): Promise<void> {
     }
   });
 
-  let harness: DevHarnessHandle | null = null;
-
   const applyRunOutput = (runKey: MockScenarioKey): void => {
     const preset = MOCK_SCENARIO_PRESETS[state.selectedScenarioPreset];
     const run = preset.runs[runKey];
-    state.scenarioRunKey = runKey;
-    state.battleFrameData = {
-      ...state.battleFrameData,
-      battleTime: run.battleTime,
-      speed: state.speed
-    };
+    Object.assign(state, completeRun(state, runKey));
+    updateBattleData(
+      state,
+      scaleTroopsForBattle(state.battleFrameData.blue.troops, state.battleScale),
+      scaleTroopsForBattle(state.battleFrameData.red.troops, state.battleScale),
+      state.battleScale,
+      run.battleTime
+    );
     gameFrame.updateData(state.battleFrameData);
     syncSelectionFeedback(state, gameFrame);
     harness?.setRawEvents(formatPresetMockEvents(preset, runKey));
@@ -354,18 +333,19 @@ export async function createApp(root: HTMLElement): Promise<void> {
         ...run.result
       })
     );
+    refreshDeploymentStatus();
   };
 
   harness = createDevHarness(harnessHost, {
     seed: state.seed,
     speed: state.speed,
     selectedScenarioPreset: state.selectedScenarioPreset,
+    deploymentStatus: getDeploymentStatus(),
     onSeedChange: (seed) => {
       state.seed = seed || MO.defaultSeed;
+      Object.assign(state, markSeedChanged(state));
+      refreshDeploymentStatus();
       setSelectionHint(`当前随机种子: ${state.seed}`, gameFrame);
-      if (state.scenarioRunKey !== 'idle') {
-        applyRunOutput(state.scenarioRunKey);
-      }
     },
     onSpeedChange: (speed) => {
       state.speed = speed;
@@ -378,18 +358,16 @@ export async function createApp(root: HTMLElement): Promise<void> {
       state.selectedScenarioPreset = preset;
       state.selectedFormation = 'arrow';
       state.formationMode = 'preset';
-      const scale = state.scenarioRunKey === 'run5v5' ? '5v5' : '1v1';
-      const battleTime = state.scenarioRunKey === 'idle' ? MO.defaultBattleTime : MOCK_SCENARIO_PRESETS[preset].runs[state.scenarioRunKey].battleTime;
-      state.battleFrameData = makePresetBattleData(preset, scale, state.speed, battleTime);
+      Object.assign(state, markScenarioPresetApplied(state, 'preset'));
+      const battleTime = state.runResultState === 'not_run' ? MO.defaultBattleTime : state.battleFrameData.battleTime;
+      state.battleFrameData = makePresetBattleData(preset, state.battleScale, state.speed, battleTime);
       state.selectedUnitId = null;
       gameFrame.updateData(state.battleFrameData);
       gameFrame.setFormationLabel(formatFormationDisplay(state.selectedFormation, state.formationMode));
       harness?.setSelectedScenarioPreset(preset);
       syncSelectionFeedback(state, gameFrame);
+      refreshDeploymentStatus();
       setSelectionHint(`部署预设已应用: ${MOCK_SCENARIO_PRESETS[preset].name}`, gameFrame);
-      if (state.scenarioRunKey !== 'idle') {
-        applyRunOutput(state.scenarioRunKey);
-      }
     },
     onRun1v1: () => {
       applyRunOutput('run1v1');
@@ -398,56 +376,49 @@ export async function createApp(root: HTMLElement): Promise<void> {
       applyRunOutput('run5v5');
     },
     onResetBattle: () => {
-      state.scenarioRunKey = 'idle';
+      Object.assign(state, resetDeploymentMode());
       state.selectedScenarioPreset = DEFAULT_SCENARIO_PRESET;
       state.selectedUnitId = null;
       state.selectedFormation = 'arrow';
       state.formationMode = 'preset';
-      state.battleFrameData = makePresetBattleData(DEFAULT_SCENARIO_PRESET, '1v1', state.speed, MO.defaultBattleTime);
+      state.battleFrameData = makePresetBattleData(DEFAULT_SCENARIO_PRESET, state.battleScale, state.speed, MO.defaultBattleTime);
       gameFrame.updateData(state.battleFrameData);
       gameFrame.setFormationLabel(formatFormationDisplay(state.selectedFormation, state.formationMode));
       syncSelectionFeedback(state, gameFrame);
       harness?.setSelectedScenarioPreset(state.selectedScenarioPreset);
+      refreshDeploymentStatus();
       harness?.setRawEvents('尚未执行 Run 1v1/Run 5v5。');
-      harness?.setResult('Test Result: 尚未运行场景。');
+      harness?.setResult('尚未运行场景。');
       setSelectionHint('战斗已重置', gameFrame);
     },
     onRandomFormation: () => {
       const nextBlue = shuffleTroopPositions(
         state.battleFrameData.blue.troops,
-        `${state.seed}|${state.scenarioRunKey}|${state.selectedScenarioPreset}|blue`
+        `${state.seed}|${state.battleScale}|${state.selectedScenarioPreset}|blue`
       );
       const nextRed = shuffleTroopPositions(
         state.battleFrameData.red.troops,
-        `${state.seed}|${state.scenarioRunKey}|${state.selectedScenarioPreset}|red`
+        `${state.seed}|${state.battleScale}|${state.selectedScenarioPreset}|red`
       );
       state.formationMode = 'manual';
-      updateBattleData(state, nextBlue, nextRed, state.scenarioRunKey === 'run5v5' ? '5v5' : '1v1', state.battleFrameData.battleTime);
+      updateBattleData(state, nextBlue, nextRed, state.battleScale, state.battleFrameData.battleTime);
       gameFrame.updateData(state.battleFrameData);
       gameFrame.setFormationLabel(formatFormationDisplay(state.selectedFormation, state.formationMode));
       syncSelectionFeedback(state, gameFrame);
+      markBattleInputRandomized();
       setSelectionHint('当前站位已随机重排', gameFrame);
     },
     onExportReplay: () => {
-      const payload = {
-        seed: state.seed,
-        speed: state.speed,
-        scenarioRunKey: state.scenarioRunKey,
-        selectedScenarioPreset: state.selectedScenarioPreset,
-        units: {
-          blue: state.battleFrameData.blue.troops.length,
-          red: state.battleFrameData.red.troops.length
-        }
-      };
-      harness?.setRawEvents(`Export Replay\n${JSON.stringify(payload, null, 2)}`);
-      harness?.setResult('Test Result: 已导出 mock replay。');
+      const unitSummary = `蓝${state.battleFrameData.blue.troops.length} / 红${state.battleFrameData.red.troops.length}`;
+      harness?.setToolStatus(`${createToolStatusText('export_replay')} ${state.battleScale} · ${unitSummary} · seed=${state.seed}`);
+      setSelectionHint('Replay 已导出（模拟）', gameFrame);
     },
     onImportReplay: () => {
-      harness?.setRawEvents('Import Replay\n[模拟导入完成] 已加载 mock 数据。');
+      harness?.setToolStatus(createToolStatusText('import_replay'));
       setSelectionHint('Replay 已导入（模拟）', gameFrame);
     },
     onValidateContent: () => {
-      harness?.setResult('Test Result: validate content success (mock).');
+      harness?.setToolStatus(createToolStatusText('validate_content'));
       setSelectionHint('内容校验通过（模拟）', gameFrame);
     },
     onTacticalCommand: (command) => {
@@ -465,8 +436,9 @@ export async function createApp(root: HTMLElement): Promise<void> {
   });
 
   harness.setRawEvents('尚未执行 Run 1v1/Run 5v5。');
-  harness.setResult('Test Result: 尚未运行场景。');
+  harness.setResult('尚未运行场景。');
   harness.setSelectedScenarioPreset(state.selectedScenarioPreset);
+  refreshDeploymentStatus();
   gameFrame.updateData(state.battleFrameData);
   gameFrame.setFormationLabel(formatFormationDisplay(state.selectedFormation, state.formationMode));
   syncSelectionFeedback(state, gameFrame);

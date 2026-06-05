@@ -208,3 +208,79 @@
 1. [feature-summary-v0_2.md](./feature-summary-v0_2.md)
 2. [battlefield-interactions.md](./battlefield-interactions.md)
 3. [formation-and-deployment.md](./formation-and-deployment.md)
+
+---
+
+## v0.3
+
+阶段定位：
+
+1. `demo-web` 从“可编辑战斗沙盘”进入“输入与结果状态可解释”的开发模式
+2. 明确当前战场输入和 Run 结果有效性之间的关系
+3. 防止 preset、seed 和工具按钮误刷新或污染 Run 结果区
+
+本阶段新增：
+
+### 1. Deployment Mode 状态
+
+1. `DevHarness` 新增 `部署状态` 主状态块
+2. 显示当前是否可运行、已运行、或结果已过期
+3. 显示当前输入来自默认模板、Scenario Preset、手调或随机重排
+4. 显示 Run 结果是否未运行、对应当前战场或已过期
+
+### 2. Run 结果有效性
+
+1. `Raw Events` 标题随有效性变化
+2. `Test Result` 标题随有效性变化
+3. 输入变更后保留旧结果内容
+4. 输入变更后明确标记旧结果已过期
+
+### 3. 操作语义收口
+
+1. `Scenario Preset` 只覆盖站位，不自动 Run
+2. `Seed` 修改只影响后续随机和下次 Run，不自动 Run
+3. `Speed` 修改只影响播放 / 显示，不影响结果有效性
+4. 拖动、部署、删除、阵型和 `Random Formation` 会把旧结果标为过期
+5. `Reset Battle` 回到默认模板、`1v1`、未运行态
+
+### 4. 工具状态独立
+
+1. `Export Replay` 不再覆盖 `Raw Events / Test Result`
+2. `Import Replay` 不再覆盖 `Raw Events / Test Result`
+3. `Validate Content` 不再覆盖 `Raw Events / Test Result`
+4. 工具区新增独立 `工具状态`
+
+### 5. Run 规模重算
+
+1. `Run 1v1 / Run 5v5` 会按当前上场单位切换 troop 规模数值
+2. 重算时保留单位 id、archetype 和当前位置
+3. Run 不再重置当前阵型或重新套 preset
+
+### 6. 战斗准备约束
+
+1. 托盘新增军备值显示
+2. 每个兵种新增出阵 cost 表达
+3. 当前阵容除 `8 队上限` 外，再增加军备预算约束
+4. 预算不足时兵种卡会禁用
+5. 删除单位后军备会即时返还
+
+本阶段修正的关键问题：
+
+1. 解决 `scenarioRunKey` 同时表达规模、最近运行和结果有效性的混乱
+2. 解决修改 preset / seed 后自动刷新旧结果的问题
+3. 解决工具按钮占用 Run 结果区的问题
+4. 解决用户无法判断旧 Raw Events / Test Result 是否仍对应当前战场的问题
+5. 解决战斗准备阶段“可以无限补兵、没有构筑代价”的空白问题
+
+当前边界：
+
+1. 仍未接 battle-core
+2. 仍未实现真实 replay 导入导出
+3. 未实现历史 Run 对比
+4. 未在 `GameFrame` 内新增持久部署状态 HUD
+5. 尚未实现更细的编制槽位、兵种重复限制和正式部署规则
+
+相关文档：
+
+1. [feature-summary-v0_3.md](./feature-summary-v0_3.md)
+2. [formation-and-deployment.md](./formation-and-deployment.md)

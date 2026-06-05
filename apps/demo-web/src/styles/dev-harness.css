@@ -55,9 +55,21 @@
 }
 
 .harness-preset-label,
-.harness-preset-description {
+.harness-preset-description,
+.harness-status-line,
+.harness-tool-status {
   margin: 0 0 8px;
   color: #cfdbec;
+}
+
+.harness-status-line--primary {
+  color: #ffd18b;
+  font-weight: 700;
+}
+
+.harness-tool-status {
+  margin-top: 8px;
+  line-height: 1.4;
 }
 
 .harness-preset-wrap {

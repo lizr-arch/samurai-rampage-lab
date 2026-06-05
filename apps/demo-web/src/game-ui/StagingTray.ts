@@ -1,15 +1,15 @@
+import { type BattlePrepState, getTroopPrepCost } from '../app/battle-prep';
 import { type BattleSide, type UnitArchetype, UNIT_ARCHETYPE_ORDER, UNIT_LIBRARY } from '../mock/mock-armies';
 
 interface StagingTrayInput {
   side: BattleSide;
-  fieldCount: number;
-  maxUnits: number;
+  prepState: BattlePrepState;
   onDeployAttempt: (payload: { side: BattleSide; archetype: UnitArchetype; clientX: number; clientY: number }) => void;
 }
 
 interface StagingTrayHandle {
   root: HTMLElement;
-  setFieldCount(count: number): void;
+  updatePrepState(state: BattlePrepState): void;
 }
 
 export function createStagingTray(input: StagingTrayInput): StagingTrayHandle {
@@ -23,13 +23,19 @@ export function createStagingTray(input: StagingTrayInput): StagingTrayHandle {
   title.textContent = input.side === 'blue' ? '蓝方出阵兵种' : '红方出阵兵种';
   const countLabel = document.createElement('span');
   countLabel.className = 'staging-tray__hint';
+  const prepLabel = document.createElement('span');
+  prepLabel.className = 'staging-tray__prep';
   titleRow.append(title, countLabel);
+  root.append(titleRow, prepLabel);
 
   const cards = document.createElement('div');
   cards.className = 'staging-tray__grid';
 
-  function updateCountLabel(count: number): void {
-    countLabel.textContent = `${count}/${input.maxUnits}`;
+  function updateHeader(state: BattlePrepState): void {
+    countLabel.textContent = `${state.fieldCount}/${state.maxUnits}`;
+    prepLabel.textContent = `军备 ${state.spent}/${state.total} · 余 ${state.remaining}`;
+    root.classList.toggle('is-full', state.fieldCount >= state.maxUnits);
+    root.classList.toggle('is-over-budget', state.remaining <= 0);
   }
 
   function createGhost(card: HTMLElement): HTMLElement {
@@ -42,6 +48,8 @@ export function createStagingTray(input: StagingTrayInput): StagingTrayHandle {
     document.body.appendChild(ghost);
     return ghost;
   }
+
+  const cardsByArchetype = new Map<UnitArchetype, HTMLButtonElement>();
 
   for (const archetype of UNIT_ARCHETYPE_ORDER) {
     const unit = UNIT_LIBRARY[archetype];
@@ -63,13 +71,17 @@ export function createStagingTray(input: StagingTrayInput): StagingTrayHandle {
     meta.className = 'staging-card__meta';
     meta.textContent = `${unit.role} · ${unit.tag}`;
 
+    const cost = document.createElement('span');
+    cost.className = 'staging-card__cost';
+    cost.textContent = `${getTroopPrepCost(archetype)} 点`;
+
     const affordance = document.createElement('span');
     affordance.className = 'staging-card__affordance';
     affordance.textContent = '拖入战场';
 
-    card.append(icon, name, meta, affordance);
+    card.append(icon, name, meta, cost, affordance);
     card.addEventListener('mousedown', (event: MouseEvent) => {
-      if (event.button !== 0 || input.fieldCount >= input.maxUnits) {
+      if (event.button !== 0 || card.disabled) {
         return;
       }
       event.preventDefault();
@@ -103,17 +115,27 @@ export function createStagingTray(input: StagingTrayInput): StagingTrayHandle {
     });
 
     cards.appendChild(card);
+    cardsByArchetype.set(archetype, card);
   }
 
-  updateCountLabel(input.fieldCount);
-  root.append(titleRow, cards);
+  root.append(cards);
+
+  function updatePrepState(state: BattlePrepState): void {
+    input.prepState = state;
+    updateHeader(state);
+    for (const archetype of UNIT_ARCHETYPE_ORDER) {
+      const card = cardsByArchetype.get(archetype);
+      if (!card) continue;
+      const allowed = state.affordable[archetype];
+      card.disabled = !allowed;
+      card.classList.toggle('is-disabled', !allowed);
+    }
+  }
+
+  updatePrepState(input.prepState);
 
   return {
     root,
-    setFieldCount(count) {
-      input.fieldCount = count;
-      updateCountLabel(count);
-      root.classList.toggle('is-full', count >= input.maxUnits);
-    }
+    updatePrepState
   };
 }

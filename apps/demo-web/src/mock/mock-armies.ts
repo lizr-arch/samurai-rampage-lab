@@ -140,7 +140,7 @@ function makeUnitId(side: BattleSide, archetype: UnitArchetype): string {
   return `${side}-${archetype}-${String(sideUnitCounters[side]).padStart(2, '0')}`;
 }
 
-function makeScaleAdjustedDefinition(scale: '1v1' | '5v5', definition: UnitDefinition): UnitDefinition {
+export function makeScaleAdjustedDefinition(scale: '1v1' | '5v5', definition: UnitDefinition): UnitDefinition {
   if (scale === '1v1') {
     return { ...definition };
   }

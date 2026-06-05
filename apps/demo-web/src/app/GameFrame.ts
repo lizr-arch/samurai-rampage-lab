@@ -1,5 +1,5 @@
 import { BattleSpeed } from '../mock/mock-battle-events';
-import { BattleSide, MockArmySide, MockUnit, type UnitArchetype } from '../mock/mock-armies';
+import { BattleSide, MockArmySide, MockUnit, UNIT_ARCHETYPE_ORDER, type UnitArchetype } from '../mock/mock-armies';
 import { SquadPosition } from '../game-ui/drag-player-squad';
 import { SelectedUnitChipData } from '../game-ui/SelectedUnitChip';
 import { createTopHud } from '../game-ui/TopHud';
@@ -7,12 +7,15 @@ import { createArmyPanel } from '../game-ui/ArmyPanel';
 import { createBattleField } from '../game-ui/BattleField';
 import { createBottomCommandBar } from '../game-ui/BottomCommandBar';
 import { createStagingTray } from '../game-ui/StagingTray';
+import { createBattlePrepState } from './battle-prep';
+import { type BattleScale } from './deployment-mode';
 
 export interface GameFrameData {
   blue: MockArmySide;
   red: MockArmySide;
   battleTime: string;
   speed: BattleSpeed;
+  battleScale: BattleScale;
 }
 
 export interface GameFrameHandle {
@@ -70,8 +73,7 @@ export function createGameFrame(host: HTMLElement, input: GameFrameInput): GameF
 
   const leftTray = createStagingTray({
     side: 'blue',
-    fieldCount: input.data.blue.troops.length,
-    maxUnits: input.maxUnitsPerSide,
+    prepState: createBattlePrepState(input.data.blue.troops, input.data.battleScale, input.maxUnitsPerSide, UNIT_ARCHETYPE_ORDER),
     onDeployAttempt: ({ side, archetype, clientX, clientY }) => {
       const position = battlefield.resolveTrayDeploy(side, archetype, clientX, clientY, currentData.blue.troops, currentData.red.troops);
       if (!position) {
@@ -83,8 +85,7 @@ export function createGameFrame(host: HTMLElement, input: GameFrameInput): GameF
 
   const rightTray = createStagingTray({
     side: 'red',
-    fieldCount: input.data.red.troops.length,
-    maxUnits: input.maxUnitsPerSide,
+    prepState: createBattlePrepState(input.data.red.troops, input.data.battleScale, input.maxUnitsPerSide, UNIT_ARCHETYPE_ORDER),
     onDeployAttempt: ({ side, archetype, clientX, clientY }) => {
       const position = battlefield.resolveTrayDeploy(side, archetype, clientX, clientY, currentData.blue.troops, currentData.red.troops);
       if (!position) {
@@ -139,8 +140,8 @@ export function createGameFrame(host: HTMLElement, input: GameFrameInput): GameF
       hud.update(next);
       leftPanel.update(next.blue);
       rightPanel.update(next.red);
-      leftTray.setFieldCount(next.blue.troops.length);
-      rightTray.setFieldCount(next.red.troops.length);
+      leftTray.updatePrepState(createBattlePrepState(next.blue.troops, next.battleScale, input.maxUnitsPerSide, UNIT_ARCHETYPE_ORDER));
+      rightTray.updatePrepState(createBattlePrepState(next.red.troops, next.battleScale, input.maxUnitsPerSide, UNIT_ARCHETYPE_ORDER));
       battlefield.update({
         blueUnits: next.blue.troops,
         redUnits: next.red.troops

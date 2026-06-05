@@ -239,6 +239,15 @@
   font-size: 14px;
 }
 
+.staging-tray__prep {
+  position: relative;
+  z-index: 1;
+  display: block;
+  margin-bottom: 8px;
+  color: #ffe2a2;
+  font-size: 13px;
+}
+
 .staging-tray__grid {
   position: relative;
   z-index: 1;
@@ -290,6 +299,7 @@
 }
 
 .staging-card__meta,
+.staging-card__cost,
 .staging-card__affordance {
   font-size: 11px;
   line-height: 1.15;
@@ -298,6 +308,10 @@
 .staging-card__meta {
   grid-area: meta;
   color: #a9bfd8;
+}
+
+.staging-card__cost {
+  color: #ffcf88;
 }
 
 .staging-card__affordance {
@@ -311,6 +325,19 @@
   outline: none;
   filter: brightness(1.12);
   border-color: #65a6cf;
+}
+
+.staging-card.is-disabled,
+.staging-card:disabled {
+  opacity: 0.46;
+  filter: saturate(0.55);
+  cursor: not-allowed;
+}
+
+.staging-card:disabled:hover,
+.staging-card.is-disabled:hover {
+  filter: saturate(0.55);
+  border-color: #405873;
 }
 
 .staging-card--ghost {
