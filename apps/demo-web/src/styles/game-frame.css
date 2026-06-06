@@ -192,12 +192,12 @@
 
 .army-panel {
   position: relative;
+  overflow: visible;
   border: 2px solid #3d556d;
   background: linear-gradient(180deg, rgba(9, 18, 28, 0.95), rgba(5, 12, 19, 0.9));
   padding: 6px 8px 8px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .staging-tray {
@@ -344,6 +344,41 @@
   width: 140px;
   opacity: 0.94;
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.4);
+}
+
+/* ---- Troop Deploy Ghost ---- */
+
+.troop-deploy-ghost {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 2px dashed rgba(100, 200, 255, 0.72);
+  border-radius: 4px;
+  background: rgba(10, 30, 60, 0.72);
+  backdrop-filter: blur(2px);
+  box-shadow: 0 0 16px rgba(80, 180, 255, 0.3), 0 8px 24px rgba(0, 0, 0, 0.4);
+  transform: translate(-50%, -50%);
+}
+
+.troop-deploy-ghost__icon {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(120, 210, 255, 0.8);
+  background: rgba(30, 80, 140, 0.5);
+  color: #7fd8ff;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.troop-deploy-ghost__name {
+  color: #d0e8ff;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-shadow: 0 0 8px rgba(100, 180, 255, 0.5);
 }
 
 .army-panel::before {

@@ -1,5 +1,8 @@
 import { BattleSide, MockUnit, type UnitArchetype } from '../mock/mock-armies';
 import { attachPlayerSquadDrag, resolveBattlefieldDrop, type SquadPosition } from './drag-player-squad';
+import { type BannerPlacementPreview, type PlacedBanner, type UnitCommandState } from './banner-types';
+import { createBannerPlacementOverlay } from './BannerPlacementOverlay';
+import { createClashFx } from './createClashFx';
 import { createSelectedUnitChip, type SelectedUnitChipData } from './SelectedUnitChip';
 import { createUnitMarker } from './UnitMarker';
 import { projectBattlefieldUnit } from './battlefield-projection';
@@ -26,12 +29,20 @@ interface BattleFieldInput {
     committed: boolean;
     removed: boolean;
   }) => void;
+  onPlacementHover: (position: { x: number; y: number } | null) => void;
+  onPlacementConfirm: (position: { x: number; y: number }) => void;
+  onPlacementCancel: () => void;
 }
 
 interface BattleFieldHandle {
   root: HTMLElement;
   update(data: BattleFieldData): void;
   highlightUnit(selectedUnitId: string | null): void;
+  setBannerPreviewTargets(unitIds: string[]): void;
+  setUnitCommandStates(states: UnitCommandState[]): void;
+  setPlacementArmed(active: boolean): void;
+  setBannerPlacementPreview(preview: BannerPlacementPreview | null): void;
+  setPlacedBanners(banners: PlacedBanner[]): void;
   setSelectedUnitChip(data: SelectedUnitChipData | null): void;
   setInfo(text: string): void;
   resolveTrayDeploy(
@@ -101,58 +112,11 @@ function renderSide(
   }
 }
 
-function createClashFx(): HTMLElement {
-  const root = document.createElement('div');
-  root.className = 'battlefield-combat-fx';
-  const slashBlue = document.createElement('div');
-  slashBlue.className = 'battle-arc battle-arc--blue';
-  const slashRed = document.createElement('div');
-  slashRed.className = 'battle-arc battle-arc--red';
-  const arrowBlue = document.createElement('div');
-  arrowBlue.className = 'battle-arrow battle-arrow--blue';
-  const arrowRed = document.createElement('div');
-  arrowRed.className = 'battle-arrow battle-arrow--red';
-  const clashCore = document.createElement('div');
-  clashCore.className = 'battle-clash-core';
-  const sparks = document.createElement('div');
-  sparks.className = 'battle-sparks';
-  const s1 = document.createElement('span');
-  s1.className = 'battle-spark battle-spark--a';
-  const s2 = document.createElement('span');
-  s2.className = 'battle-spark battle-spark--b';
-  const s3 = document.createElement('span');
-  s3.className = 'battle-spark battle-spark--c';
-  const trail1 = document.createElement('div');
-  trail1.className = 'battle-trail battle-trail--left';
-  const trail2 = document.createElement('div');
-  trail2.className = 'battle-trail battle-trail--right';
-  const trail3 = document.createElement('div');
-  trail3.className = 'battle-trail battle-trail--center';
-  const hitA = document.createElement('div');
-  hitA.className = 'battle-damage battle-damage--blue';
-  hitA.textContent = '-187';
-  const hitB = document.createElement('div');
-  hitB.className = 'battle-damage battle-damage--red';
-  hitB.textContent = '-255';
-  const hitC = document.createElement('div');
-  hitC.className = 'battle-damage battle-damage--mid';
-  hitC.textContent = '-96';
-  const title = document.createElement('h2');
-  title.className = 'battle-center-title';
-  title.textContent = '激突';
-  const clashRoad = document.createElement('div');
-  clashRoad.className = 'battle-road';
-  const cross1 = document.createElement('div');
-  cross1.className = 'battle-cross battle-cross--left';
-  const cross2 = document.createElement('div');
-  cross2.className = 'battle-cross battle-cross--right';
-  sparks.append(s1, s2, s3);
-  root.append(clashRoad, cross1, cross2, slashBlue, slashRed, arrowBlue, arrowRed, trail1, trail2, trail3, clashCore, sparks, hitA, hitB, hitC, title);
-  return root;
-}
-
 export function createBattleField(input: BattleFieldInput): BattleFieldHandle {
   const zoomState = { scale: 1, translateX: 0, translateY: 0 };
+  let currentPreviewTargets = new Set<string>();
+  let currentCommandStates: UnitCommandState[] = [];
+  let placementMode = false;
 
   const root = document.createElement('section');
   root.className = 'battlefield';
@@ -184,6 +148,7 @@ export function createBattleField(input: BattleFieldInput): BattleFieldHandle {
   const selectedUnitChip = createSelectedUnitChip();
   const zoomBadge = document.createElement('div');
   zoomBadge.className = 'battlefield-zoom-badge';
+  const placementOverlay = createBannerPlacementOverlay();
 
   function clampTranslate(axis: 'x' | 'y', value: number): number {
     const viewportSize = axis === 'x' ? root.clientWidth : root.clientHeight;
@@ -222,6 +187,7 @@ export function createBattleField(input: BattleFieldInput): BattleFieldHandle {
   }, { passive: false });
 
   root.addEventListener('dblclick', (event: MouseEvent) => {
+    if (placementMode) return;
     const target = event.target as HTMLElement | null;
     if (target?.closest('.unit-marker')) return;
     zoomState.scale = 1;
@@ -231,6 +197,7 @@ export function createBattleField(input: BattleFieldInput): BattleFieldHandle {
   });
 
   root.addEventListener('mousedown', (event: MouseEvent) => {
+    if (placementMode) return;
     const target = event.target as HTMLElement | null;
     if (event.button !== 0 || zoomState.scale <= 1 || target?.closest('.unit-marker')) {
       return;
@@ -255,12 +222,71 @@ export function createBattleField(input: BattleFieldInput): BattleFieldHandle {
     window.addEventListener('mouseup', handleUp);
   });
 
-  renderSide('blue', input.data.blueUnits, input.onUnitSelect, blueGroup, viewport, dragZone, input.deleteZones.blue, input.onUnitDragStart, input.onUnitDragEnd);
-  renderSide('red', input.data.redUnits, input.onUnitSelect, redGroup, viewport, dragZone, input.deleteZones.red, input.onUnitDragStart, input.onUnitDragEnd);
+  renderSide('blue', input.data.blueUnits, input.onUnitSelect, blueGroup, root, dragZone, input.deleteZones.blue, input.onUnitDragStart, input.onUnitDragEnd);
+  renderSide('red', input.data.redUnits, input.onUnitSelect, redGroup, root, dragZone, input.deleteZones.red, input.onUnitDragStart, input.onUnitDragEnd);
   canvas.append(blueGroup, center, redGroup);
   viewport.appendChild(canvas);
-  root.append(viewport, dragZone, selectedUnitChip.root, zoomBadge);
+  root.append(viewport, placementOverlay.root, dragZone, selectedUnitChip.root, zoomBadge);
   applyViewportTransform();
+
+  function resolvePlacementPosition(clientX: number, clientY: number): { x: number; y: number } | null {
+    const rect = root.getBoundingClientRect();
+    if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) {
+      return null;
+    }
+    return {
+      x: ((clientX - rect.left) / rect.width) * 1920,
+      y: ((clientY - rect.top) / rect.height) * 1080
+    };
+  }
+
+  root.addEventListener('mousemove', (event: MouseEvent) => {
+    if (!placementMode) return;
+    input.onPlacementHover(resolvePlacementPosition(event.clientX, event.clientY));
+  });
+  root.addEventListener('mouseleave', () => {
+    if (!placementMode) return;
+    input.onPlacementHover(null);
+  });
+  root.addEventListener('click', (event: MouseEvent) => {
+    if (!placementMode) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('.unit-marker')) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    const position = resolvePlacementPosition(event.clientX, event.clientY);
+    if (!position) return;
+    input.onPlacementConfirm(position);
+  });
+  root.addEventListener('contextmenu', (event: MouseEvent) => {
+    if (!placementMode) return;
+    event.preventDefault();
+    input.onPlacementCancel();
+  });
+  root.addEventListener('keydown', (event: KeyboardEvent) => {
+    if (!placementMode || event.key !== 'Escape') return;
+    event.preventDefault();
+    input.onPlacementCancel();
+  });
+
+  function syncOrderPresentation(): void {
+    const markers = root.querySelectorAll<HTMLElement>('.unit-marker');
+    for (const marker of Array.from(markers)) {
+      const markerUnitId = marker.dataset.unitId ?? '';
+      const rawUnitId = markerUnitId.startsWith('blue-') ? markerUnitId.slice(5) : markerUnitId.startsWith('red-') ? markerUnitId.slice(4) : markerUnitId;
+      marker.classList.toggle('is-banner-preview-target', currentPreviewTargets.has(rawUnitId));
+      // 移除旧标签，渲染持久命令状态
+      marker.querySelector('.order-cmd-state')?.remove();
+      const cs = currentCommandStates.find((c) => c.unitId === rawUnitId);
+      if (!cs) continue;
+      const flagEl = document.createElement('div');
+      flagEl.className = `order-cmd-state order-cmd-state--${cs.commandType === 'charge' ? 'advance' : 'rest'}`;
+      flagEl.innerHTML = `<span class="order-cmd-state__label">${cs.label}</span>`;
+      marker.appendChild(flagEl);
+    }
+  }
+  syncOrderPresentation();
 
   return {
     root,
@@ -269,15 +295,38 @@ export function createBattleField(input: BattleFieldInput): BattleFieldHandle {
     },
     setInfo(_text: string) {},
     update(next) {
-      renderSide('blue', next.blueUnits, input.onUnitSelect, blueGroup, viewport, dragZone, input.deleteZones.blue, input.onUnitDragStart, input.onUnitDragEnd);
-      renderSide('red', next.redUnits, input.onUnitSelect, redGroup, viewport, dragZone, input.deleteZones.red, input.onUnitDragStart, input.onUnitDragEnd);
+      renderSide('blue', next.blueUnits, input.onUnitSelect, blueGroup, root, dragZone, input.deleteZones.blue, input.onUnitDragStart, input.onUnitDragEnd);
+      renderSide('red', next.redUnits, input.onUnitSelect, redGroup, root, dragZone, input.deleteZones.red, input.onUnitDragStart, input.onUnitDragEnd);
       applyViewportTransform();
+      syncOrderPresentation();
     },
     highlightUnit(selectedUnitId) {
       const markers = root.querySelectorAll<HTMLElement>('.unit-marker');
       for (const marker of Array.from(markers)) {
         marker.classList.toggle('is-selected', marker.dataset.unitId === selectedUnitId);
       }
+      syncOrderPresentation();
+    },
+    setBannerPreviewTargets(unitIds) {
+      currentPreviewTargets = new Set(unitIds);
+      syncOrderPresentation();
+    },
+    setUnitCommandStates(states) {
+      currentCommandStates = states;
+      syncOrderPresentation();
+    },
+    setPlacementArmed(active) {
+      placementMode = active;
+      root.classList.toggle('is-banner-placement-mode', active);
+      if (!active) {
+        placementOverlay.setPreview(null);
+      }
+    },
+    setBannerPlacementPreview(preview) {
+      placementOverlay.setPreview(preview);
+    },
+    setPlacedBanners(banners) {
+      placementOverlay.setPlacedBanners(banners);
     },
     resolveTrayDeploy(side, archetype, clientX, clientY, blueUnits, redUnits) {
       const sameSideUnits = side === 'blue' ? blueUnits : redUnits;

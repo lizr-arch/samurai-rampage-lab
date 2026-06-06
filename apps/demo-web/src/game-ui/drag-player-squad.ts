@@ -92,8 +92,10 @@ export function resolveBattlefieldDrop(
   otherSideUnits: MockUnit[]
 ): SquadPosition | null {
   const rect = battlefield.getBoundingClientRect();
-  const centerX = clientX - rect.left;
-  const centerY = clientY - rect.top;
+  const scaleX = rect.width > 0 ? battlefield.offsetWidth / rect.width : 1;
+  const scaleY = rect.height > 0 ? battlefield.offsetHeight / rect.height : 1;
+  const centerX = (clientX - rect.left) * scaleX;
+  const centerY = (clientY - rect.top) * scaleY;
   const localRect = new DOMRect(0, 0, battlefield.offsetWidth, battlefield.offsetHeight);
   const next = toSideSlotPosition(side, centerX, centerY, localRect);
   const valid = isWithinSideHalf(side, centerX, centerY, localRect) && isFarEnough(side, unitId, next, otherSideUnits, localRect);

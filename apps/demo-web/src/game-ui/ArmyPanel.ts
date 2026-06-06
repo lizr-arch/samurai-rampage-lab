@@ -1,15 +1,22 @@
 import { BattleSide, MockArmySide, MockUnit } from '../mock/mock-armies';
+import { type CommanderUiModel } from './commander-types';
+import { createCommanderSelect } from './CommanderSelect';
 
 interface ArmyPanelInput {
   side: BattleSide;
   data: MockArmySide;
   onUnitSelect: (unitId: string, side: BattleSide) => void;
+  commanderUi?: CommanderUiModel;
+  onCommanderToggle?: () => void;
+  onCommanderSelect?: (commanderId: string) => void;
 }
 
 interface ArmyPanelHandle {
   root: HTMLElement;
   update(data: MockArmySide): void;
   highlight(selectedUnitId: string | null): void;
+  setCommanderUi(commanderUi: CommanderUiModel | null): void;
+  setPortalHost(host: HTMLElement): void;
 }
 
 function unitIcon(side: BattleSide): string {
@@ -93,11 +100,26 @@ export function createArmyPanel(input: ArmyPanelInput): ArmyPanelHandle {
   commander.className = 'army-commander';
   commander.textContent = input.data.commander;
   textWrap.append(title, commander);
+  header.append(portrait, textWrap);
 
   const list = document.createElement('div');
   list.className = 'army-list';
   panel.append(header, list);
-  header.append(portrait, textWrap);
+  let currentCommanderUi = input.commanderUi ?? null;
+  let commanderSelect: ReturnType<typeof createCommanderSelect> | null = null;
+  let portalHost: HTMLElement | null = null;
+
+  function ensureCommanderSelect(portalHost: HTMLElement): ReturnType<typeof createCommanderSelect> {
+    if (!commanderSelect) {
+      commanderSelect = createCommanderSelect(portalHost, {
+        commanders: [],
+        selectedCommanderId: '',
+        isOpen: false,
+        onSelect: () => {}
+      });
+    }
+    return commanderSelect;
+  }
 
   function render(units: MockUnit[]): void {
     list.replaceChildren();
@@ -106,7 +128,38 @@ export function createArmyPanel(input: ArmyPanelInput): ArmyPanelHandle {
     }
   }
 
+  function renderCommanderSelect(commanderUi: CommanderUiModel | null, portalHost?: HTMLElement): void {
+    const isInteractive = input.side === 'blue' && commanderUi && input.onCommanderToggle && input.onCommanderSelect;
+    portrait.classList.toggle('is-clickable', Boolean(isInteractive));
+    commander.classList.toggle('is-clickable', Boolean(isInteractive));
+    portrait.tabIndex = isInteractive ? 0 : -1;
+    commander.tabIndex = isInteractive ? 0 : -1;
+    commander.setAttribute('role', isInteractive ? 'button' : 'note');
+    portrait.setAttribute('role', isInteractive ? 'button' : 'img');
+    if (!isInteractive || !portalHost) {
+      commanderSelect?.update({ commanders: [], selectedCommanderId: '', isOpen: false, onSelect: () => {} });
+      return;
+    }
+    for (const node of [portrait, commander]) {
+      node.onclick = () => input.onCommanderToggle?.();
+      node.onkeydown = (event: KeyboardEvent) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        input.onCommanderToggle?.();
+      };
+    }
+    const cs = ensureCommanderSelect(portalHost);
+    cs.update({
+      commanders: commanderUi.commanders,
+      selectedCommanderId: commanderUi.selectedCommanderId,
+      isOpen: commanderUi.commanderSelectOpen,
+      onSelect: (id: string) => input.onCommanderSelect?.(id),
+      triggerEl: portrait
+    });
+  }
+
   render(input.data.troops);
+  renderCommanderSelect(currentCommanderUi, portalHost ?? undefined);
 
   return {
     root: panel,
@@ -119,6 +172,14 @@ export function createArmyPanel(input: ArmyPanelInput): ArmyPanelHandle {
       for (const btn of Array.from(buttons)) {
         btn.classList.toggle('is-selected', btn.dataset.unitKey === selectedUnitId);
       }
+    },
+    setCommanderUi: (commanderUi) => {
+      currentCommanderUi = commanderUi;
+      renderCommanderSelect(currentCommanderUi, portalHost ?? undefined);
+    },
+    setPortalHost: (host) => {
+      portalHost = host;
+      renderCommanderSelect(currentCommanderUi, host);
     }
   };
 }

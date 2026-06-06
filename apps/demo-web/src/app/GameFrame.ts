@@ -1,5 +1,7 @@
 import { BattleSpeed } from '../mock/mock-battle-events';
 import { BattleSide, MockArmySide, MockUnit, UNIT_ARCHETYPE_ORDER, type UnitArchetype } from '../mock/mock-armies';
+import { type CommanderUiModel } from '../game-ui/commander-types';
+import { type BannerPlacementPreview, type PlacedBanner, type UnitCommandState } from '../game-ui/banner-types';
 import { SquadPosition } from '../game-ui/drag-player-squad';
 import { SelectedUnitChipData } from '../game-ui/SelectedUnitChip';
 import { createTopHud } from '../game-ui/TopHud';
@@ -22,11 +24,17 @@ export interface GameFrameHandle {
   root: HTMLElement;
   shell: HTMLElement;
   updateData(data: GameFrameData): void;
+  setCommanderUi(commanderUi: CommanderUiModel): void;
   setSelectedUnit(selectedUnitId: string | null): void;
   setSelectedUnitChip(data: SelectedUnitChipData | null): void;
   showSelectionHint(text: string): void;
   setSpeed(speed: BattleSpeed): void;
   setFormationLabel(label: string): void;
+  setBannerPreviewTargets(unitIds: string[]): void;
+  setUnitCommandStates(states: UnitCommandState[]): void;
+  setPlacementArmed(active: boolean): void;
+  setBannerPlacementPreview(preview: BannerPlacementPreview | null): void;
+  setPlacedBanners(banners: PlacedBanner[]): void;
 }
 
 interface GameFrameInput {
@@ -44,6 +52,15 @@ interface GameFrameInput {
   onTrayDeploy: (result: { side: BattleSide; archetype: UnitArchetype; position: SquadPosition }) => void;
   onTacticalCommand: (name: string) => void;
   onPlaybackAction: (name: 'pause' | 'play' | 'fastforward') => void;
+  onCommanderToggle: () => void;
+  onCommanderSelect: (commanderId: string) => void;
+  onBannerHover: (bannerOrderId: string | null) => void;
+  onBannerToggle: (bannerOrderId: string) => void;
+  onClickOrder: (commandItemId: string) => void;
+  onBattlefieldPointerMove: (position: { x: number; y: number } | null) => void;
+  onBattlefieldPlaceBanner: (position: { x: number; y: number }) => void;
+  onBattlefieldCancelBanner: () => void;
+  commanderUi: CommanderUiModel;
 }
 
 export function createGameFrame(host: HTMLElement, input: GameFrameInput): GameFrameHandle {
@@ -62,7 +79,10 @@ export function createGameFrame(host: HTMLElement, input: GameFrameInput): GameF
   const leftPanel = createArmyPanel({
     side: 'blue',
     data: input.data.blue,
-    onUnitSelect: input.onUnitSelect
+    onUnitSelect: input.onUnitSelect,
+    commanderUi: input.commanderUi,
+    onCommanderToggle: input.onCommanderToggle,
+    onCommanderSelect: input.onCommanderSelect
   });
 
   const rightPanel = createArmyPanel({
@@ -106,7 +126,10 @@ export function createGameFrame(host: HTMLElement, input: GameFrameInput): GameF
     },
     onUnitSelect: input.onUnitSelect,
     onUnitDragStart: input.onUnitDragStart,
-    onUnitDragEnd: input.onUnitDragEnd
+    onUnitDragEnd: input.onUnitDragEnd,
+    onPlacementHover: input.onBattlefieldPointerMove,
+    onPlacementConfirm: input.onBattlefieldPlaceBanner,
+    onPlacementCancel: input.onBattlefieldCancelBanner
   });
 
   const commandBar = createBottomCommandBar({
@@ -114,10 +137,14 @@ export function createGameFrame(host: HTMLElement, input: GameFrameInput): GameF
     blueUnits: input.data.blue.troops,
     redUnits: input.data.red.troops,
     selectedUnitId: null,
+    commanderUi: input.commanderUi,
     onPause: () => input.onPlaybackAction('pause'),
     onPlay: () => input.onPlaybackAction('play'),
     onFastForward: () => input.onPlaybackAction('fastforward'),
-    onTactic: input.onTacticalCommand
+    onTactic: input.onTacticalCommand,
+    onBannerHover: input.onBannerHover,
+    onBannerToggle: input.onBannerToggle,
+    onClickOrder: input.onClickOrder
   });
 
   const content = document.createElement('div');
@@ -131,6 +158,14 @@ export function createGameFrame(host: HTMLElement, input: GameFrameInput): GameF
   content.append(leftRail, battlefield.root, rightRail);
 
   root.append(hud.root, content, commandBar.root);
+
+  // 主帅选择浮层 portal，直属 game-frame 避免被裁切
+  const commanderPortal = document.createElement('div');
+  commanderPortal.className = 'commander-portal';
+  root.appendChild(commanderPortal);
+
+  // 传给左侧面板用于 CommanderSelect
+  leftPanel.setPortalHost(commanderPortal);
 
   return {
     root,
@@ -152,6 +187,10 @@ export function createGameFrame(host: HTMLElement, input: GameFrameInput): GameF
         ...next.red.troops.map((unit) => ({ side: 'red' as const, unit }))
       ]);
     },
+    setCommanderUi: (commanderUi) => {
+      leftPanel.setCommanderUi(commanderUi);
+      commandBar.setCommanderUi(commanderUi);
+    },
     setSelectedUnit: (selectedUnitId) => {
       leftPanel.highlight(selectedUnitId);
       rightPanel.highlight(selectedUnitId);
@@ -169,6 +208,21 @@ export function createGameFrame(host: HTMLElement, input: GameFrameInput): GameF
     },
     setFormationLabel: (label) => {
       commandBar.setFormationLabel(label);
+    },
+    setBannerPreviewTargets: (unitIds) => {
+      battlefield.setBannerPreviewTargets(unitIds);
+    },
+    setUnitCommandStates: (states) => {
+      battlefield.setUnitCommandStates(states);
+    },
+    setPlacementArmed: (active) => {
+      battlefield.setPlacementArmed(active);
+    },
+    setBannerPlacementPreview: (preview) => {
+      battlefield.setBannerPlacementPreview(preview);
+    },
+    setPlacedBanners: (banners) => {
+      battlefield.setPlacedBanners(banners);
     }
   };
 }

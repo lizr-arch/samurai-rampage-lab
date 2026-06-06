@@ -38,13 +38,23 @@ export function createStagingTray(input: StagingTrayInput): StagingTrayHandle {
     root.classList.toggle('is-over-budget', state.remaining <= 0);
   }
 
-  function createGhost(card: HTMLElement): HTMLElement {
-    const ghost = card.cloneNode(true) as HTMLElement;
-    ghost.classList.add('staging-card--ghost');
+  function createGhost(card: HTMLElement, archetype: UnitArchetype): HTMLElement {
+    const unit = UNIT_LIBRARY[archetype];
+    const ghost = document.createElement('div');
+    ghost.className = 'troop-deploy-ghost';
     ghost.style.position = 'fixed';
     ghost.style.pointerEvents = 'none';
-    ghost.style.margin = '0';
     ghost.style.zIndex = '9999';
+
+    const icon = document.createElement('span');
+    icon.className = 'troop-deploy-ghost__icon';
+    icon.textContent = card.querySelector('.staging-card__icon')?.textContent ?? '◫';
+
+    const name = document.createElement('span');
+    name.className = 'troop-deploy-ghost__name';
+    name.textContent = unit.name;
+
+    ghost.append(icon, name);
     document.body.appendChild(ghost);
     return ghost;
   }
@@ -85,16 +95,14 @@ export function createStagingTray(input: StagingTrayInput): StagingTrayHandle {
         return;
       }
       event.preventDefault();
-      const ghost = createGhost(card);
-      const offsetX = 18;
-      const offsetY = 18;
-      ghost.style.left = `${event.clientX + offsetX}px`;
-      ghost.style.top = `${event.clientY + offsetY}px`;
+      const ghost = createGhost(card, archetype);
+      ghost.style.left = `${event.clientX}px`;
+      ghost.style.top = `${event.clientY}px`;
       root.classList.add('is-dragging-from-tray');
 
       const handleMove = (moveEvent: MouseEvent): void => {
-        ghost.style.left = `${moveEvent.clientX + offsetX}px`;
-        ghost.style.top = `${moveEvent.clientY + offsetY}px`;
+        ghost.style.left = `${moveEvent.clientX}px`;
+        ghost.style.top = `${moveEvent.clientY}px`;
       };
 
       const handleUp = (upEvent: MouseEvent): void => {

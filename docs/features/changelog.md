@@ -145,6 +145,115 @@
 
 ---
 
+## v0.4
+
+阶段定位：
+
+1. `demo-web` 从“布阵和 Run 结果”推进到“主帅与军令 UI 闭环”
+2. 在不接真实战斗的前提下验证正式 `game-frame` 中的发令体验
+3. 将军令 mock event 保持在 DevHarness，不污染正式 UI
+
+本阶段新增：
+
+### 1. 主帅选择
+
+1. 蓝方 ArmyPanel 的头像和主帅名可点击
+2. 小型 `CommanderSelect` 面板支持双主帅切换
+3. 切换后蓝方 TopHud / ArmyPanel / BottomCommandBar 同步更新
+4. 切换后当前令旗恢复为初始值
+5. 切换后军令 cooldown 清空
+
+### 2. 正式 UI 军令栏
+
+1. 底部栏新增当前主帅名
+2. 底部栏新增令旗数量显示
+3. 底部栏新增当前主帅专属军令按钮
+4. 底部栏新增军令 tooltip
+5. 底部栏新增最近一次军令提示
+
+### 3. 战场目标组反馈
+
+1. hover 军令时高亮蓝方目标兵团
+2. click 成功后目标兵团头顶出现短旗标
+3. 当前只支持 `targetGroup=all`
+4. hover 和 click 反馈不改变真实单位位置与属性
+
+### 4. DevHarness 军令事件
+
+1. 新增 `Order Events` 区域
+2. 成功发令时记录 `commander_order_issued`
+3. 新增 `恢复令旗` 按钮
+4. 恢复令旗时记录 `commander_banners_restored`
+
+本阶段修正的关键问题：
+
+1. 将“军令 mock event”从 `Raw Events` 中分离，避免再次把运行结果区做成状态杂物箱
+2. 将军令状态维持在 `App.ts` 纯状态和专用 helper 中，避免埋进渲染层
+
+当前边界：
+
+1. 仍未接 battle-core
+2. 仍未实现真实战斗推进
+3. 军令仍不改变单位真实属性
+4. 仍未实现右键、框选、画线和精确目标组
+
+相关文档：
+
+1. [feature-summary-v0_4.md](./feature-summary-v0_4.md)
+2. [../25_commander_order_v0_1.md](../25_commander_order_v0_1.md)
+3. [battlefield-interactions.md](./battlefield-interactions.md)
+4. [formation-and-deployment.md](./formation-and-deployment.md)
+
+---
+
+## v0.5
+
+阶段定位：
+
+1. `demo-web` 将主帅发令从点击型军令改成投放型军旗
+2. 更强调“战场落旗”而不是“按钮放技能”
+3. 在不接真实战斗的前提下验证投放闭环
+
+本阶段新增：
+
+### 1. 军旗投放模式
+
+1. 点击军旗按钮进入 armed 状态
+2. 再次点击、`Esc` 或右键可取消
+3. cooldown 和令旗不足时不能进入 armed
+
+### 2. 战场预览与落旗
+
+1. 鼠标移动显示范围预览圈
+2. 范围内蓝方兵团高亮
+3. 点击战场后生成落旗实体
+4. 军旗实体短时保留并显示作用范围
+
+### 3. 投放反馈
+
+1. 冲锋旗影响目标显示 `冲`
+2. 集结旗影响目标显示 `集`
+3. 成功投放会扣令旗并进入 cooldown
+4. DevHarness 记录 `banner_order_placed`
+
+本阶段修正的关键问题：
+
+1. 解决“点击按钮直接生效看起来不像主帅下令”的表现问题
+2. 将投放模式与拖兵交互分离，避免两种操作互相抢夺输入
+
+当前边界：
+
+1. 仍未接 battle-core
+2. 军旗仍不改变真实 troop 行为
+3. 仍不支持右键命令、框选、画线和拖拽军旗
+
+相关文档：
+
+1. [feature-summary-v0_5.md](./feature-summary-v0_5.md)
+2. [../26_banner_placement_v0_1.md](../26_banner_placement_v0_1.md)
+
+---
+
 ## v0.2
 
 阶段定位：
@@ -284,3 +393,132 @@
 
 1. [feature-summary-v0_3.md](./feature-summary-v0_3.md)
 2. [formation-and-deployment.md](./formation-and-deployment.md)
+
+---
+
+## v0.4
+
+阶段定位：
+
+1. 引入主帅概念和军令系统
+2. 建立主帅选择交互原型
+3. 区分点击型军令与投放型军旗
+
+本阶段新增：
+
+### 1. 双主帅
+
+1. 破阵主帅（冲阵型）：全军前进 + 冲锋旗
+2. 筹策主帅（调度型）：停下休整 + 集结旗
+
+### 2. 军令系统
+
+1. 点击型军令：点击即生效（占位，不产生实际效果）
+2. 投放型军旗：点击进入 armed 模式 → 战场落旗 → 消耗令旗 + CD
+
+### 3. 主帅选择面板
+
+1. Portal 架构 CommanderSelect 浮层
+2. 卡片式展示两个主帅信息
+3. 切换后重置令旗、清空 CD
+
+本阶段修正的关键问题：
+
+1. 投放模式死锁修复
+2. 拖拽区域 CSS class 丢失修复
+3. 落兵坐标偏差修复
+4. Tooltip 死循环修复
+
+当前边界：
+
+1. 仍未接 battle-core
+2. 点击型军令仅占位
+3. 红方无主帅选择
+
+相关文档：
+
+1. [feature-summary-v0_4.md](./feature-summary-v0_4.md)
+2. [../25_commander_select_v0_1.md](../25_commander_select_v0_1.md)
+
+---
+
+## v0.5
+
+阶段定位：
+
+1. 双旗同显，每个主帅独立计旗
+2. 兵团持久 commandState 标签
+
+本阶段新增：
+
+### 1. 双旗同显
+
+1. 底部栏同时显示两面军旗，各带所属主帅名
+2. `commanderBanners: Record<string, number>` 按主帅独立计旗
+
+### 2. 兵团 commandState
+
+1. 落旗后范围内兵团获得持久命令标签（15 秒）
+2. 新命令覆盖旧命令
+3. 到期自动消失
+
+### 3. 拖兵 Ghost 视觉
+
+1. 从卡片克隆改为独立虚影元素
+2. 虚线边框 + 辉光 + 兵种名
+
+本阶段修正的关键问题：
+
+1. 投放模式死锁
+2. 拖拽区域失效
+3. 落兵坐标偏差
+4. Tooltip 死循环
+
+相关文档：
+
+1. [feature-summary-v0_5.md](./feature-summary-v0_5.md)
+2. [feature-summary-v0_6.md](./feature-summary-v0_6.md)
+
+---
+
+## v0.6
+
+阶段定位：
+
+1. 正式主帅选择系统
+2. Portal 浮层 CommanderSelect
+3. 文件拆分与架构整理
+
+本阶段新增：
+
+### 1. 数据分离
+
+1. `commander-data.ts` 独立数据文件
+2. `commander-types.ts` 纯类型 + `CommandItem` 类型
+3. `CommanderSelect.ts` 独立面板组件
+
+### 2. Portal 浮层
+
+1. `commander-portal` 直属 `.game-frame`，z-index: 30
+2. 面板定位用 `offsetLeft/offsetTop` 累加，规避 scale 偏差
+3. 不再被 ArmyPanel 裁切链遮挡
+
+### 3. 底部栏联动
+
+1. 显示当前主帅的点击型+投放型指令
+2. 切换主帅实时更新按钮
+
+### 4. 像素风头像
+
+1. Python 生成 48×48 PNG 占位图
+2. 路径：`public/assets/commanders/`
+
+本阶段修正的关键问题：
+
+1. CommanderSelect 被左侧界面裁切
+2. 面板定位坐标偏差
+
+相关文档：
+
+1. [feature-summary-v0_6.md](./feature-summary-v0_6.md)
+2. [../25_commander_select_v0_1.md](../25_commander_select_v0_1.md)

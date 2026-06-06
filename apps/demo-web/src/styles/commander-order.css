@@ -1,0 +1,404 @@
+.army-portrait.is-clickable,
+.army-commander.is-clickable {
+  cursor: pointer;
+}
+
+.army-portrait.is-clickable:focus-visible,
+.army-commander.is-clickable:focus-visible,
+.commander-card:focus-visible,
+.order-btn:focus-visible {
+  outline: 2px solid rgba(255, 228, 153, 0.92);
+  outline-offset: 2px;
+}
+
+.commander-select {
+  position: absolute;
+  z-index: 50;
+  display: none;
+}
+
+.commander-select.is-open {
+  display: block;
+}
+
+.commander-select-cards {
+  width: 280px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 2px solid rgba(217, 194, 137, 0.72);
+  background: linear-gradient(180deg, rgba(13, 22, 30, 0.98), rgba(7, 11, 19, 0.98));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6);
+}
+
+.commander-card {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid rgba(111, 135, 166, 0.72);
+  background: rgba(18, 28, 39, 0.96);
+  color: #eef6ff;
+}
+
+.commander-card.is-selected {
+  border-color: rgba(255, 219, 120, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(255, 219, 120, 0.48);
+}
+
+.commander-card-title,
+.commander-card-tags,
+.commander-card-banners,
+.commander-card-description {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.05;
+}
+
+.commander-card-title { color: #f7d58d; }
+.commander-card-tags { color: #8fd8ff; }
+.commander-card-description { color: rgba(230, 240, 255, 0.82); }
+
+.order-bar-summary {
+  display: grid;
+  gap: 4px;
+  min-width: 210px;
+}
+
+.order-bar-commander {
+  font-size: 28px;
+  color: #fff0bf;
+  letter-spacing: 1px;
+}
+
+.order-bar-banners,
+.order-bar-tooltip,
+.order-bar-message,
+.order-bar-placement-state {
+  font-size: 21px;
+  line-height: 1.05;
+}
+
+.order-bar-banners {
+  color: #8ed8ff;
+}
+
+.order-bar-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.order-btn {
+  min-width: 130px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 2px solid rgba(158, 179, 204, 0.7);
+  background: linear-gradient(180deg, rgba(23, 34, 48, 0.96), rgba(10, 16, 24, 0.96));
+  color: var(--text);
+  cursor: pointer;
+  position: relative;
+}
+
+.order-btn-icon {
+  font-size: 18px;
+  color: #ffe5a3;
+  flex-shrink: 0;
+}
+
+.order-btn-icon--click {
+  color: #8af0d0;
+}
+
+.order-btn--click {
+  border-color: rgba(130, 210, 180, 0.5);
+  background: linear-gradient(180deg, rgba(16, 38, 32, 0.9), rgba(8, 20, 16, 0.9));
+}
+
+.order-btn--click:hover {
+  border-color: rgba(140, 230, 200, 0.8);
+}
+
+.order-btn-name {
+  font-size: 22px;
+  color: #eaf2ff;
+  font-weight: 600;
+}
+
+.order-btn-owner {
+  font-size: 14px;
+  color: rgba(180, 200, 220, 0.7);
+  margin-left: auto;
+}
+
+.order-btn-cd {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 28px;
+  padding: 1px 4px;
+  border: 1px solid rgba(167, 151, 203, 0.88);
+  background: rgba(15, 22, 34, 0.96);
+  color: #c8b8f0;
+  font-size: 16px;
+  text-align: center;
+  border-radius: 4px;
+}
+
+.order-btn.is-active {
+  border-color: rgba(255, 218, 112, 0.96);
+  box-shadow: 0 0 12px rgba(255, 200, 80, 0.32), inset 0 0 0 1px rgba(255, 218, 112, 0.42);
+  animation: banner-armed-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes banner-armed-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 200, 80, 0.24), inset 0 0 0 1px rgba(255, 218, 112, 0.42); }
+  50% { box-shadow: 0 0 20px rgba(255, 200, 80, 0.48), inset 0 0 0 1px rgba(255, 218, 112, 0.6); }
+}
+
+.order-btn.is-cooldown {
+  opacity: 0.82;
+  border-color: rgba(167, 151, 203, 0.88);
+}
+
+.order-btn.is-disabled {
+  opacity: 0.46;
+}
+
+.order-btn-meta {
+  color: rgba(206, 226, 245, 0.84);
+}
+
+.order-bar-tooltip {
+  color: #d6e6f6;
+  min-width: 360px;
+}
+
+.order-bar-message {
+  color: #ffd68e;
+  min-width: 240px;
+}
+
+.order-bar-placement-state {
+  color: #a7f0de;
+  min-width: 120px;
+}
+
+.unit-marker.is-banner-preview-target {
+  filter: drop-shadow(0 0 12px rgba(255, 238, 162, 0.82));
+}
+
+.unit-marker.is-banner-preview-target .unit-squad {
+  box-shadow: 0 0 0 2px rgba(255, 226, 134, 0.82), 0 0 16px rgba(255, 226, 134, 0.3);
+}
+
+/* ---- Persistent Command State Label ---- */
+
+.order-cmd-state {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border: 1px solid rgba(255, 233, 170, 0.88);
+  background: rgba(16, 22, 32, 0.94);
+  color: #fff6d3;
+  font-size: 16px;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.order-cmd-state--advance {
+  border-color: rgba(255, 180, 120, 0.92);
+  color: #ffe0b0;
+}
+
+.order-cmd-state--rest {
+  border-color: rgba(146, 217, 201, 0.92);
+  color: #bdf4e0;
+}
+
+.order-cmd-state__label {
+  font-weight: 600;
+}
+
+.order-cmd-state__timer {
+  color: rgba(200, 210, 230, 0.75);
+  font-size: 14px;
+}
+
+.order-feedback-flag {
+  position: absolute;
+  top: -18px;
+  right: 8px;
+  min-width: 24px;
+  padding: 1px 4px;
+  border: 1px solid rgba(255, 233, 170, 0.88);
+  background: rgba(16, 22, 32, 0.92);
+  color: #fff6d3;
+  font-size: 18px;
+  line-height: 1;
+  text-align: center;
+  pointer-events: none;
+}
+
+.order-feedback-flag--advance {
+  border-color: rgba(255, 214, 123, 0.92);
+  color: #ffe3a1;
+}
+
+.order-feedback-flag--rest {
+  border-color: rgba(146, 217, 201, 0.92);
+  color: #bdf4e0;
+}
+
+.banner-placement-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.banner-placement-overlay__preview,
+.banner-placement-overlay__placed {
+  position: absolute;
+  inset: 0;
+}
+
+.banner-preview,
+.placed-banner {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+.banner-preview {
+  border-radius: 999px;
+  border: 2px dashed rgba(255, 236, 179, 0.82);
+  background: rgba(255, 229, 153, 0.12);
+}
+
+.banner-preview--charge {
+  border-color: rgba(255, 183, 143, 0.9);
+  background: rgba(255, 163, 127, 0.14);
+}
+
+.banner-preview--gather {
+  border-color: rgba(145, 225, 218, 0.9);
+  background: rgba(100, 194, 221, 0.14);
+}
+
+.banner-preview__center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 244, 211, 0.88);
+  background: rgba(12, 18, 28, 0.92);
+  color: #fff2c5;
+  font-size: 18px;
+}
+
+.banner-preview__meta {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 10px);
+  transform: translateX(-50%);
+  padding: 2px 8px;
+  border: 1px solid rgba(255, 242, 196, 0.72);
+  background: rgba(10, 18, 28, 0.92);
+  color: #f4f7ff;
+  font-size: 20px;
+  white-space: nowrap;
+}
+
+.placed-banner__flag {
+  position: relative;
+  z-index: 1;
+  width: 28px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 240, 203, 0.9);
+  background: rgba(15, 22, 34, 0.96);
+  color: #fff0c7;
+  font-size: 19px;
+}
+
+.placed-banner__flag--charge {
+  border-color: rgba(255, 191, 160, 0.92);
+}
+
+.placed-banner__flag--gather {
+  border-color: rgba(152, 235, 220, 0.92);
+}
+
+.placed-banner__aura {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 240, 203, 0.58);
+  opacity: 0.72;
+}
+
+.placed-banner__aura--charge {
+  border-color: rgba(255, 183, 143, 0.68);
+}
+
+.placed-banner__aura--gather {
+  border-color: rgba(145, 225, 218, 0.68);
+}
+
+.battlefield.is-banner-placement-mode .battlefield-viewport {
+  cursor: crosshair;
+}
+
+.battlefield.is-banner-placement-mode .unit-marker {
+  pointer-events: none;
+}
+
+/* ---- Banner Tooltip ---- */
+
+.banner-tooltip {
+  position: absolute;
+  z-index: 20;
+  transform: translateX(-50%);
+  pointer-events: none;
+  min-width: 200px;
+  max-width: 260px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 229, 153, 0.72);
+  background: linear-gradient(180deg, rgba(16, 26, 38, 0.98), rgba(8, 14, 22, 0.98));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  display: grid;
+  gap: 6px;
+}
+
+.banner-tooltip__title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffe5a3;
+}
+
+.banner-tooltip__stats {
+  font-size: 17px;
+  color: #9ec8f0;
+}
+
+.banner-tooltip__desc {
+  font-size: 17px;
+  color: rgba(215, 228, 245, 0.78);
+  line-height: 1.3;
+}
+.commander-portal { position: absolute; inset: 0; z-index: 30; pointer-events: none; } .commander-portal > * { pointer-events: auto; }

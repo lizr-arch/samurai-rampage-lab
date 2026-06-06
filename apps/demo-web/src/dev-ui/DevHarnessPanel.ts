@@ -17,6 +17,7 @@ export interface DevHarnessActions {
   onExportReplay: () => void;
   onImportReplay: () => void;
   onValidateContent: () => void;
+  onRestoreBanners: () => void;
   onTacticalCommand: (command: string) => void;
   onPlaybackAction: (action: 'pause' | 'play' | 'fastforward') => void;
 }
@@ -30,6 +31,7 @@ export interface DevHarnessHandle {
   setSelectedScenarioPreset(preset: ScenarioPresetKey): void;
   setDeploymentStatus(status: DeploymentModeViewModel): void;
   setToolStatus(text: string): void;
+  setOrderEvents(text: string): void;
 }
 
 function createButton(label: string, onClick: () => void): HTMLButtonElement {
@@ -119,10 +121,11 @@ export function createDevHarnessPanel(
   const exportBtn = createButton('Export Replay', actions.onExportReplay);
   const importBtn = createButton('Import Replay', actions.onImportReplay);
   const validateBtn = createButton('Validate Content', actions.onValidateContent);
+  const restoreBannersBtn = createButton('恢复令旗', actions.onRestoreBanners);
   const toolStatus = document.createElement('p');
   toolStatus.className = 'harness-tool-status';
   toolStatus.textContent = '工具状态：未执行';
-  tools.append(toolsTitle, exportBtn, importBtn, validateBtn, toolStatus);
+  tools.append(toolsTitle, exportBtn, importBtn, validateBtn, restoreBannersBtn, toolStatus);
 
   const status = document.createElement('div');
   status.className = 'harness-block';
@@ -144,10 +147,20 @@ export function createDevHarnessPanel(
   resultArea.textContent = 'Test Result: 尚未运行场景。';
   result.append(resultTitle, resultArea);
 
+  const orderEvents = document.createElement('div');
+  orderEvents.className = 'harness-block';
+  const orderEventsTitle = document.createElement('h3');
+  orderEventsTitle.textContent = 'Order Events';
+  const orderEventsArea = document.createElement('pre');
+  orderEventsArea.className = 'raw-events';
+  orderEventsArea.dataset.area = 'order-events';
+  orderEventsArea.textContent = 'Commander Events: 尚未发布军令。';
+  orderEvents.append(orderEventsTitle, orderEventsArea);
+
   const bottomInfo = document.createElement('p');
   bottomInfo.className = 'harness-meta';
   bottomInfo.textContent = '提示：当前仅为 mock 驱动，未接 battle-core。';
-  root.append(title, deployment, scenario, params, tools, status, result, bottomInfo);
+  root.append(title, deployment, scenario, params, tools, status, result, orderEvents, bottomInfo);
 
   function setSelectedSpeed(speed: BattleSpeed): void {
     for (const button of speedButtons) {
@@ -191,6 +204,9 @@ export function createDevHarnessPanel(
     setDeploymentStatus,
     setToolStatus: (text) => {
       toolStatus.textContent = text;
+    },
+    setOrderEvents: (text) => {
+      orderEventsArea.textContent = text;
     }
   };
 }
