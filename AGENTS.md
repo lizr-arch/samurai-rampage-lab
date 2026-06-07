@@ -2,6 +2,63 @@
 
 This repository is optimized for AI-assisted development. Keep tasks small, package-scoped, and easy to verify.
 
+## Environment & Build
+
+### Prerequisites
+
+| Tool    | Minimum Version | Verify             |
+| ------- | --------------- | ------------------ |
+| Node.js | >= 18           | `node --version`   |
+| pnpm    | >= 9            | `pnpm --version`   |
+
+### Setup
+
+**Install pnpm** (if missing):
+
+```bash
+# Recommended: enable corepack (bundled with Node.js >= 16.20)
+corepack enable
+corepack prepare pnpm@9 --activate
+
+# Alternative: install globally via npm
+npm install -g pnpm@9
+```
+
+**Build the project:**
+
+```bash
+pnpm install      # install all workspace dependencies
+pnpm build        # type-check + compile all packages (smoke test)
+pnpm test         # run test suite
+pnpm dev          # start demo-web dev server
+```
+
+Always run `pnpm build` first to catch type errors and workspace resolution issues early — `pnpm dev` uses Vite which is more lenient with types.
+
+### Common Issues
+
+**`pnpm: command not found`**
+→ pnpm not installed or not on PATH. Run `corepack enable` then retry.
+
+**`Cannot find module '@samurai-rampage/...'`**
+→ Workspace packages not built yet. Run `pnpm build` before `pnpm dev`.
+
+**`ERR_PNPM_NO_MATCHING_VERSION` or install hangs**
+→ Node.js version too old. Requires Node.js >= 18. Use `nvm` or `fnm` to switch:
+```bash
+nvm install 22
+nvm use 22
+```
+
+**TypeScript errors in IDE but dev server works**
+→ Vite strips types at runtime. Run `pnpm build` to get real type-check results.
+
+**Port conflict on Vite dev server**
+→ Kill existing process or set a different port:
+```bash
+pnpm dev -- --port 5174
+```
+
 ## Read First
 
 Before editing, read:
